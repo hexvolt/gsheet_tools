@@ -9,6 +9,7 @@ def cli():
 
 
 cli.add_command(tabs.normalize)
+cli.add_command(tabs.sort)
 cli.add_command(files.ls)
 
 

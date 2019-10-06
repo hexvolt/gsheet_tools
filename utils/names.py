@@ -6,6 +6,10 @@ from dateutil import parser
 DATE_PATTERN = re.compile(r"[\d\/.\-\\]+")
 
 
+def extract_number(string):
+    return int("".join(filter(str.isdigit, string)))
+
+
 def get_normalized_title(tab_title, filename, names_registry=None):
     """
     Extract the day number from the title.

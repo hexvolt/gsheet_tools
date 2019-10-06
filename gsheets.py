@@ -1,14 +1,16 @@
-import gspread
+import click
 
-from utils.auth import get_credentials
+from commands import tabs, files
 
 
-def main():
-    credentials = get_credentials()
-    gc = gspread.authorize(credentials)
-    spreadsheet = gc.open('2018-02')
-    print(spreadsheet.title)
+@click.group()
+def cli():
+    pass
+
+
+cli.add_command(tabs.normalize)
+cli.add_command(files.ls)
 
 
 if __name__ == '__main__':
-    main()
+    cli()

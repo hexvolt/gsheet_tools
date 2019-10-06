@@ -38,13 +38,20 @@ def get_normalized_title(tab_title, filename, names_registry=None):
     if is_normalized:
         raise ValueError(f"The tab '{tab_title}' is normalized already.")
 
-    tab_date = parser.parse(match_date, yearfirst=True)
+    file_year = filename[2:4]
     file_date = parser.parse(filename, yearfirst=True)
 
+    year_first = not match_date.endswith(file_year)
+    tab_date = parser.parse(match_date, yearfirst=year_first, fuzzy=True)
+
     if file_date.year != tab_date.year or file_date.month != tab_date.month:
-        raise ValueError(
-            f"The date in the tab '{tab_title}' does not correspond to the file name '{filename}'."
-        )
+        err = f"The date in the tab '{tab_title}' does not correspond to the file name '{filename}'."
+        if not year_first:
+            tab_date = parser.parse(match_date, dayfirst=True, fuzzy=True)
+            if file_date.year != tab_date.year or file_date.month != tab_date.month:
+                raise ValueError(err)
+        else:
+            raise ValueError(err)
 
     normalized_title = "{:02d}".format(tab_date.day)
     if names_registry:

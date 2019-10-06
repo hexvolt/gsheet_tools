@@ -10,4 +10,4 @@ def ls():
     credentials = get_credentials()
     gc = gspread.authorize(credentials)
     for sheet_data in gc.list_spreadsheet_files():
-        click.echo(sheet_data['name'])
+        click.echo(sheet_data["name"])

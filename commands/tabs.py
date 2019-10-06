@@ -14,7 +14,7 @@ def _rename(spreadsheet, one_by_one, dry=False):
             normalized_title = get_normalized_title(
                 tab_title=title_before,
                 filename=spreadsheet.title,
-                names_registry=names_registry
+                names_registry=names_registry,
             )
         except ValueError as e:
             conversion_error = RESULT_WARNING.format(e) if dry else RESULT_SKIPPED
@@ -38,8 +38,8 @@ def _rename(spreadsheet, one_by_one, dry=False):
 
 
 @click.command()
-@click.argument('filename')
-@click.option('--one-by-one', is_flag=True)
+@click.argument("filename")
+@click.option("--one-by-one", is_flag=True)
 def normalize(filename, one_by_one):
     """
     Normalize the titles of all tabs in the spreadsheet.
@@ -58,7 +58,9 @@ def normalize(filename, one_by_one):
 
     _rename(spreadsheet=spreadsheet, one_by_one=one_by_one, dry=True)
 
-    if not one_by_one and not click.confirm("Rename all tabs (tabs without proper date will be skipped)?"):
+    if not one_by_one and not click.confirm(
+        "Rename all tabs (tabs without proper date will be skipped)?"
+    ):
         return None
 
     _rename(spreadsheet=spreadsheet, one_by_one=one_by_one)

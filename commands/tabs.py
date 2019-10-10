@@ -63,11 +63,16 @@ def _sort(spreadsheet):
         click.echo(RESULT_OK)
 
 
+def _find_duplicates(spreadsheet):
+    for worksheet in spreadsheet.worksheets():
+        pass
+
+
 @click.command()
 @click.argument("filename")
 @click.option("--one-by-one", is_flag=True)
 @click.option("--sort/--no-sort", default=True)
-def normalize(filename, one_by_one, sort):
+def normalize(filename, one_by_one, is_sort):
     """
     Normalize the titles of all tabs in the spreadsheet.
 
@@ -90,7 +95,7 @@ def normalize(filename, one_by_one, sort):
         return None
 
     _rename(spreadsheet=spreadsheet, one_by_one=one_by_one)
-    if sort:
+    if is_sort:
         _sort(spreadsheet=spreadsheet)
 
 
@@ -103,3 +108,14 @@ def sort(filename):
     spreadsheet = gc.open(filename)
 
     _sort(spreadsheet)
+
+
+@click.command()
+@click.argument("filename")
+def find_duplicates(filename):
+    """Analyze spreadsheet for duplicate tabs."""
+    credentials = get_credentials()
+    gc = gspread.authorize(credentials)
+    spreadsheet = gc.open(filename)
+
+    _find_duplicates(spreadsheet)

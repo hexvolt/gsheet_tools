@@ -1,9 +1,16 @@
+from decimal import Decimal
 from enum import Enum
 
-from gspread_formatting import get_user_entered_format, CellFormat, Color, TextFormat
+from cached_property import cached_property
+from gspread import Cell
+from gspread.utils import rowcol_to_a1, a1_to_rowcol
+from gspread_formatting import get_user_entered_format, Color
+
+from utils.cells import a1_to_coords, price_to_decimal
 
 
 class CellType(Enum):
+    REGULAR = None
     TAX = Color(red=0.8, green=0.25490198, blue=0.14509805)
     SUBTOTAL = Color(red=0.41568628, green=0.65882355, blue=0.30980393)
     TOTAL = Color(red=0.21960784, green=0.4627451, blue=0.11372549)
@@ -43,43 +50,177 @@ class CellType(Enum):
     OTHER = Color(red=0.7176471, green=0.7176471, blue=0.7176471)
 
 
-class ReceiptSheet:
+class Receipt:
     """
     Represents a worksheet with receipt.
 
     Encapsulates all data about receipt.
     """
-    STORE_CELL = 'G2'
-    TEXT_CELL = 'H2'
-    JSON_CELL = 'I2'
-    LINE_COLUMN = 'A'
-    NAME_COLUMN = 'B'
-    CODE_COLUMN = 'C'
-    PRICE_COLUMN = 'D'
+
+    STORE_CELL = "G2"
+    TEXT_CELL = "H2"
+    JSON_CELL = "I2"
+    LINE_COLUMN = "A"
+    NAME_COLUMN = "B"
+    CODE_COLUMN = "C"
+    PRICE_COLUMN = "D"
+
+    SUMMARY_TYPES = (
+        CellType.TAX,
+        CellType.SUBTOTAL,
+        CellType.TOTAL,
+        CellType.ACTUALLY_PAID,
+    )
 
     def __init__(self, worksheet):
         self.worksheet = worksheet
+        self.content = worksheet.get_all_values()
 
     @property
     def store(self):
-        return self.worksheet.acell(self.STORE_CELL).value
+        y, x = a1_to_coords(self.STORE_CELL)
+        try:
+            return self.content[y][x]
+        except IndexError:
+            raise ValueError(
+                f"Store cell {self.STORE_CELL} was not found in {self.worksheet.title}"
+            )
 
     @property
     def raw_text(self):
-        return self.worksheet.acell(self.TEXT_CELL).value
+        y, x = a1_to_coords(self.STORE_CELL)
+        try:
+            return self.content[y][x]
+        except IndexError:
+            raise ValueError(
+                f"Raw text cell {self.TEXT_CELL} was not found in {self.worksheet.title}"
+            )
 
     @property
     def raw_json(self):
-        return self.worksheet.acell(self.JSON_CELL).value
+        y, x = a1_to_coords(self.STORE_CELL)
+        try:
+            return self.content[y][x]
+        except IndexError:
+            raise ValueError(
+                f"Raw JSON cell {self.JSON_CELL} was not found in {self.worksheet.title}"
+            )
 
-    def get_cell_color(self, cell):
-        native_format = get_user_entered_format(self, cell)
+    def get_cell_color(self, label):
+        native_format = get_user_entered_format(self.worksheet, label=label)
         return native_format.backgroundColor
 
-    def get_cell_type(self, cell):
-        cell_color = self.get_cell_color(cell)
+    def get_cell_type(self, label):
+        cell_color = self.get_cell_color(label)
         try:
-            cell_type = CellType(cell_color)
+            return CellType(cell_color)
         except ValueError:
-            cell_type = None
-        return cell_type
+            return None
+
+    def _get_column_values(self, column):
+        column_cells = self.worksheet.range(f"{column}1:{column}100")
+        cells_with_values = [cell for cell in column_cells if cell.value]
+        return cells_with_values
+
+    @cached_property
+    def _prices(self):
+        """
+        Get all prices and recognize their types.
+
+        This method practices lazy evaluation - the first time a
+        certain price get requested, the entire column of prices gets
+        parsed. This is done for performance reasons in order to reduce
+        the number of API requests because it takes one API call to
+        get the style of each cell.
+
+        :return dict: a map
+            {
+                CellType.TOTAL: Decimal(1.23),
+                CellType.TAX: Decimal(1.23),
+                ...
+                "D10": Decimal(3.45),
+                "D12": Decimal(4.56),
+            }
+        """
+        result = {}
+
+        _, col = a1_to_rowcol(f"{self.PRICE_COLUMN}1")
+        price_cells = [
+            Cell(row=row, col=col, value=line[col - 1])
+            for row, line in enumerate(self.content, 1)
+            if line[col - 1] and row > 1
+        ]
+
+        for cell in reversed(price_cells):
+            label = rowcol_to_a1(cell.row, cell.col)
+            is_summary_collected = all(
+                price_type in result for price_type in self.SUMMARY_TYPES
+            )
+
+            convert_kwargs = dict(worksheet=self.worksheet, label=label)
+            if is_summary_collected:
+                result[label] = price_to_decimal(cell.value, **convert_kwargs)
+                # if all summary prices are identified already, then we don't need
+                # to check the color of other prices because the rest of them are
+                # regular prices. That's why we move on to the next cell right away.
+                continue
+
+            cell_type = self.get_cell_type(label=label)
+
+            if cell_type not in result:
+                result[cell_type] = price_to_decimal(cell.value, **convert_kwargs)
+            else:
+                result[cell_type] += price_to_decimal(cell.value, **convert_kwargs)
+
+        return result
+
+    @cached_property
+    def regular_prices(self):
+        return {
+            label: price
+            for label, price in self._prices.items()
+            if isinstance(label, str) and isinstance(price, Decimal)
+        }
+
+    @property
+    def actually_paid(self):
+        return self._prices.get(CellType.ACTUALLY_PAID)
+
+    @property
+    def total(self):
+        try:
+            return self._prices[CellType.TOTAL]
+        except KeyError:
+            raise ValueError(f"There is no TOTAL price in {self.worksheet.title}")
+
+    @property
+    def subtotal(self):
+        return self._prices.get(CellType.SUBTOTAL)
+
+    @property
+    def tax(self):
+        return self._prices.get(CellType.TAX)
+
+    def prices_are_valid(self, raise_exception=True):
+        """Return True if all prices adds up correctly to subtotal and total numbers."""
+        calculated_sum = sum(price for price in self.regular_prices.values())
+        tax = self.tax or 0
+        match_total = self.total == (self.subtotal or calculated_sum) + tax
+        if raise_exception and not match_total:
+            raise ValueError(
+                f"Subtotal {calculated_sum} + tax {tax} is not equal to total amount {self.total} "
+                f"in {self.worksheet.title}"
+            )
+
+        if self.subtotal:
+            match_subtotal = calculated_sum == self.subtotal
+            if raise_exception and not match_subtotal:
+                raise ValueError(
+                    f"Sum of prices {calculated_sum} is not equal to subtotal amount {self.subtotal} "
+                    f"in {self.worksheet.title}"
+                )
+            result = match_subtotal and match_total
+        else:
+            result = match_total
+
+        return result

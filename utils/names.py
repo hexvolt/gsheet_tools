@@ -7,6 +7,7 @@ DATE_PATTERN = re.compile(r"[\d\/.\-\\]+")
 
 
 def extract_number(string):
+    """Extract numbers from string."""
     return int("".join(filter(str.isdigit, string)))
 
 

@@ -70,7 +70,7 @@ class Spreadsheet:
 
     def validate(self):
         for worksheet in self.spreadsheet.worksheets():
-            click.echo(worksheet.title, nl=False)
+            click.echo(f"{worksheet.title} ==> ", nl=False)
             try:
                 receipt = Receipt(worksheet)
                 receipt.prices_are_valid(raise_exception=True)

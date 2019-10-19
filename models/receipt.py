@@ -269,7 +269,7 @@ class Receipt:
         if raise_exception and not match_total:
             raise ValueError(
                 f"Subtotal {calculated_sum} + tax {tax} is not equal to total amount {self.total} "
-                f"in {self.worksheet.title}"
+                f"in tab '{self.worksheet.title}'"
             )
 
         if self.subtotal:
@@ -277,7 +277,7 @@ class Receipt:
             if raise_exception and not match_subtotal:
                 raise ValueError(
                     f"Sum of prices {calculated_sum} is not equal to subtotal amount {self.subtotal} "
-                    f"in {self.worksheet.title}"
+                    f"in tab '{self.worksheet.title}'"
                 )
             result = match_subtotal and match_total
         else:

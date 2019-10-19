@@ -75,6 +75,8 @@ class Spreadsheet:
                 receipt = Receipt(worksheet)
                 receipt.prices_are_valid(raise_exception=True)
             except ValueError as e:
+                click.echo(RESULT_WARNING.format(e))
+            except Exception as e:
                 click.echo(RESULT_ERROR.format(e))
             else:
                 click.echo(RESULT_OK)

@@ -260,6 +260,10 @@ class Receipt:
     def prices_are_valid(self, raise_exception=True):
         """Return True if all prices adds up correctly to subtotal and total numbers."""
         calculated_sum = self.price_stats.get(CellType.REGULAR, 0)
+        if not self.subtotal and not calculated_sum:
+            # some receipts has just one total price
+            return True
+
         tax = self.tax or 0
         match_total = self.total == (self.subtotal or calculated_sum) + tax
         if raise_exception and not match_total:

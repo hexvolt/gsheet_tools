@@ -7,7 +7,8 @@ from models.spreadsheet import Spreadsheet
 @click.argument("filename")
 @click.option("--one-by-one", is_flag=True)
 @click.option("--reorder/--no-reorder", default=True)
-def normalize(filename, one_by_one, reorder):
+@click.option("--validate/--no-validate", default=False)
+def normalize(filename, one_by_one, reorder, validate):
     """
     Normalize all tabs in the spreadsheet.
 
@@ -37,8 +38,9 @@ def normalize(filename, one_by_one, reorder):
         click.echo("Sorting all tabs alphabetically...")
         spreadsheet.reorder()
 
-    click.echo("Validating prices in all tabs...")
-    spreadsheet.validate()
+    if validate:
+        click.echo("Validating prices in all tabs...")
+        spreadsheet.validate()
 
     click.echo("Looking for duplicate receipts...")
     spreadsheet.find_duplicates()

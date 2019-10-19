@@ -16,12 +16,12 @@ def a1_to_coords(label):
     return row, col
 
 
-def price_to_decimal(value, worksheet=None, label=None):
+def price_to_decimal(value, worksheet_title=None, label=None):
     try:
         return Decimal(value)
     except (TypeError, InvalidOperation):
-        if worksheet:
-            msg = f"Error converting '{value}' to number in worksheet '{worksheet.title}', cell {label}"
+        if worksheet_title:
+            msg = f"Error converting '{value}' to number in worksheet '{worksheet_title}', cell {label}"
         else:
             msg = f"Error converting '{value}' to number"
         raise ValueError(msg)

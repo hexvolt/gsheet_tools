@@ -1,4 +1,3 @@
-from decimal import Decimal
 from enum import Enum
 
 from cached_property import cached_property
@@ -117,29 +116,58 @@ class Receipt:
         except ValueError:
             return None
 
-    def _get_column_values(self, column):
-        column_cells = self.worksheet.range(f"{column}1:{column}100")
-        cells_with_values = [cell for cell in column_cells if cell.value]
-        return cells_with_values
+    @cached_property
+    def _names(self):
+        """
+        Get all names from the Names column and recognize their type.
+
+        This method practices lazy evaluation - the first time a
+        certain good gets requested, the entire column of purchased
+        items gets parsed. This is done for performance reasons in
+        order to reduce the number of API requests because it takes
+        one API call to get the style of each cell.
+
+        :return dict: a map
+            {
+                "B8": ('Bread', CellType.GROCERY),
+                "B10": ('SUSHI ROLL', CellType.TAKEOUTS),
+                "B14": ('DEBIT', CellType.REGULAR),
+                ...
+            }
+
+        :return:
+        """
+        result = {}
+
+        _, col = a1_to_rowcol(f"{self.NAME_COLUMN}1")
+        name_cells = [
+            Cell(row=row, col=col, value=line[col - 1])
+            for row, line in enumerate(self.content, 1)
+            if line[col - 1] and row > 1
+        ]
+
+        for cell in name_cells:
+            label = rowcol_to_a1(cell.row, cell.col)
+            cell_type = self.get_cell_type(label=label)
+
+            result[label] = (cell.value, cell_type)
+
+        return result
 
     @cached_property
     def _prices(self):
         """
-        Get all prices and recognize their types.
+        Get all prices and recognize their type.
 
-        This method practices lazy evaluation - the first time a
-        certain price get requested, the entire column of prices gets
-        parsed. This is done for performance reasons in order to reduce
-        the number of API requests because it takes one API call to
-        get the style of each cell.
+        This method practices lazy evaluation too for the same reasons.
 
         :return dict: a map
             {
-                CellType.TOTAL: Decimal(1.23),
-                CellType.TAX: Decimal(1.23),
+                "D13": (Decimal(1.23), CellType.TOTAL),
+                "D15": (Decimal(1.23), CellType.TAX),
                 ...
-                "D10": Decimal(3.45),
-                "D12": Decimal(4.56),
+                "D10": (Decimal(3.45), CellType.REGULAR),
+                "D12": (Decimal(4.56), CellType.REGULAR),
             }
         """
         result = {}
@@ -153,57 +181,85 @@ class Receipt:
 
         for cell in reversed(price_cells):
             label = rowcol_to_a1(cell.row, cell.col)
+            amount = price_to_decimal(cell.value, worksheet_title=self.worksheet.title, label=label)
+
             is_summary_collected = all(
                 price_type in result for price_type in self.SUMMARY_TYPES
             )
 
-            convert_kwargs = dict(worksheet=self.worksheet, label=label)
             if is_summary_collected:
-                result[label] = price_to_decimal(cell.value, **convert_kwargs)
+                result[label] = (amount, CellType.REGULAR)
                 # if all summary prices are identified already, then we don't need
                 # to check the color of other prices because the rest of them are
                 # regular prices. That's why we move on to the next cell right away.
                 continue
 
             cell_type = self.get_cell_type(label=label)
-
-            if cell_type not in result:
-                result[cell_type] = price_to_decimal(cell.value, **convert_kwargs)
-            else:
-                result[cell_type] += price_to_decimal(cell.value, **convert_kwargs)
+            result[label] = (amount, cell_type)
 
         return result
 
     @cached_property
+    def price_stats(self):
+        """
+        Return a sum of all prices of each type.
+
+        :return dict:
+            {
+                CellType.TOTAL: Decimal(3.45),
+                CellType.REGULAR: Decimal(34.56),
+                CellType.TAX: Decimal(1.23)
+                ...
+            }
+        """
+        result = {}
+        for label, (price, cell_type) in self._prices.items():
+            if cell_type in result:
+                result[cell_type] += price
+            else:
+                result[cell_type] = price
+        return result
+
+    @cached_property
     def regular_prices(self):
+        """
+        Get a dict of all regular prices.
+
+        :return dict: a map
+            {
+                "D10": Decimal(3.45),
+                "D12": Decimal(4.56),
+                ...
+            }
+        """
         return {
             label: price
-            for label, price in self._prices.items()
-            if isinstance(label, str) and isinstance(price, Decimal)
+            for label, (price, cell_type) in self._prices.items()
+            if cell_type == CellType.REGULAR
         }
 
     @property
     def actually_paid(self):
-        return self._prices.get(CellType.ACTUALLY_PAID)
+        return self.price_stats.get(CellType.ACTUALLY_PAID)
 
     @property
     def total(self):
         try:
-            return self._prices[CellType.TOTAL]
+            return self.price_stats[CellType.TOTAL]
         except KeyError:
             raise ValueError(f"There is no TOTAL price in {self.worksheet.title}")
 
     @property
     def subtotal(self):
-        return self._prices.get(CellType.SUBTOTAL)
+        return self.price_stats.get(CellType.SUBTOTAL)
 
     @property
     def tax(self):
-        return self._prices.get(CellType.TAX)
+        return self.price_stats.get(CellType.TAX)
 
     def prices_are_valid(self, raise_exception=True):
         """Return True if all prices adds up correctly to subtotal and total numbers."""
-        calculated_sum = sum(price for price in self.regular_prices.values())
+        calculated_sum = self.price_stats.get(CellType.REGULAR, 0)
         tax = self.tax or 0
         match_total = self.total == (self.subtotal or calculated_sum) + tax
         if raise_exception and not match_total:

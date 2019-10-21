@@ -6,9 +6,9 @@ from utils.constants import RESULT_SKIPPED, RESULT_OK, RESULT_ERROR, RESULT_WARN
 from utils.names import get_normalized_title
 
 
-class Spreadsheet:
+class ReceiptsSheet:
     """
-    Represents a spreadsheet file with all the receipts for the whole month. 
+    Represents a spreadsheet file with a collection of receipts for the whole month.
     """
 
     def __init__(self, filename):

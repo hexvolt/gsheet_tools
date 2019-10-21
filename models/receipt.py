@@ -156,7 +156,9 @@ class Receipt:
 
         for cell in reversed(price_cells):
             label = rowcol_to_a1(cell.row, cell.col)
-            amount = price_to_decimal(cell.value, worksheet_title=self.worksheet.title, label=label)
+            amount = price_to_decimal(
+                cell.value, worksheet_title=self.worksheet.title, label=label
+            )
 
             is_summary_collected = all(
                 price_type in result for price_type in SUMMARY_TYPES
@@ -228,7 +230,14 @@ class Receipt:
         result = []
         goods = copy(self.goods)
         goods_prices = copy(self.goods_prices)
-        if len(goods_prices) < len(goods):
+        if not goods_prices and len(goods) == 1:
+            goods_prices = {
+                f"{self.PRICE_COLUMN}3": self.subtotal
+                or self.total
+                or self.actually_paid
+            }
+
+        elif len(goods_prices) < len(goods):
             raise ValueError(f"Some prices are missing in '{self.worksheet.title}'")
 
         # we determine if there are any goods with multiple prices per item in order
@@ -247,7 +256,7 @@ class Receipt:
             if multiple_prices_per_good:
                 # greedy strategy - we should add as many prices as we can
                 # before meeting the next good's name
-                next_good_label = next(iter(goods), '')
+                next_good_label = next(iter(goods), "")
                 next_good_met = False
                 result_price = 0
                 while not next_good_met and goods_prices:
@@ -257,8 +266,10 @@ class Receipt:
 
                     if not goods_prices:
                         continue
-                    next_price_label = next(iter(goods_prices), '')
-                    earliest_label = get_earliest_label(next_price_label, next_good_label)
+                    next_price_label = next(iter(goods_prices), "")
+                    earliest_label = get_earliest_label(
+                        next_price_label, next_good_label
+                    )
                     next_good_met = earliest_label == next_good_label
             else:
                 price_label, result_price = next(iter(goods_prices.items()))

@@ -33,7 +33,9 @@ class Spreadsheet:
 
             names_registry.add(normalized_title or title_before)
 
-            click.echo(f"{title_before} ==> " + f"{normalized_title or conversion_error}")
+            click.echo(
+                f"{title_before} ==> " + f"{normalized_title or conversion_error}"
+            )
             if dry or conversion_error:
                 continue
 

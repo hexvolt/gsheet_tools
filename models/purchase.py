@@ -10,6 +10,7 @@ class Purchase:
     """
     Represents one purchased item.
     """
+
     good_name: str
     good_type: CellType
     good_label: str

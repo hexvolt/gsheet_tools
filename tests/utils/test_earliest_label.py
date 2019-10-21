@@ -4,7 +4,6 @@ from utils.cells import get_earliest_label
 
 
 class GetEarliestLabelTestCase(TestCase):
-
     def test_different_rows_cols(self):
         result = get_earliest_label("B2", "A2", "C3")
         self.assertEqual(result, "A2")

@@ -1,6 +1,6 @@
 from decimal import Decimal, InvalidOperation
 
-from gspread.utils import a1_to_rowcol
+from gspread.utils import a1_to_rowcol, rowcol_to_a1
 
 
 def a1_to_coords(label):
@@ -25,3 +25,18 @@ def price_to_decimal(value, worksheet_title=None, label=None):
         else:
             msg = f"Error converting '{value}' to number"
         raise ValueError(msg)
+
+
+def get_earliest_label(*labels):
+    """Return the earliest among labels in left-to-right top-to-bottom order."""
+    if len(labels) == 1:
+        return labels[0]
+
+    coords = [a1_to_rowcol(label) for label in labels]
+    min_row = min(row for row, _ in coords)
+    earliest_by_row = [(row, col) for row, col in coords if row == min_row]
+
+    min_col = min(col for _, col in coords)
+    earliest = [(row, col) for row, col in coords if col == min_col][0]
+    earliest_label = rowcol_to_a1(*earliest)
+    return earliest_label

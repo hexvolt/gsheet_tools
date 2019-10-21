@@ -12,6 +12,6 @@ class Purchase:
     """
     good_name: str
     good_type: CellType
+    good_label: str
     price: Decimal
-    name_label: str
     price_label: str

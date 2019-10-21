@@ -1,52 +1,14 @@
-from enum import Enum
+from copy import copy
 
 from cached_property import cached_property
 from gspread import Cell
 from gspread.utils import rowcol_to_a1, a1_to_rowcol
-from gspread_formatting import get_user_entered_format, Color
+from gspread_formatting import get_user_entered_format
+from natsort import natsorted
 
-from utils.cells import a1_to_coords, price_to_decimal
-
-
-class CellType(Enum):
-    REGULAR = None
-    TAX = Color(red=0.8, green=0.25490198, blue=0.14509805)
-    SUBTOTAL = Color(red=0.41568628, green=0.65882355, blue=0.30980393)
-    TOTAL = Color(red=0.21960784, green=0.4627451, blue=0.11372549)
-    ACTUALLY_PAID = Color(red=0.15294118, green=0.30588236, blue=0.07450981)
-    DATE = Color(red=0.23529412, green=0.47058824, blue=0.84705883)
-
-    # Food, glorious food
-    GROCERY = Color(red=1, green=0.9490196, blue=0.8)
-    TAKEOUTS = Color(red=0.9764706, green=0.79607844, blue=0.6117647)
-
-    # The roof over your head
-    HOUSEKEEPING = Color(red=0.91764706, green=0.81960785, blue=0.8627451)
-    FURNITURE_APPLIANCES = Color(red=0.8352941, green=0.6509804, blue=0.7411765)
-
-    # Style and personal care
-    CLOTHING = Color(red=0.8117647, green=0.8862745, blue=0.9529412)
-    GYM = Color(red=0.62352943, green=0.77254903, blue=0.9098039)
-
-    # Fun stuff
-    ENTERTAINMENT = Color(red=0.7176471, green=0.91764706, blue=0.7019608)
-    TRAVEL = Color(red=0.44705883, green=0.84705883, blue=0.4509804)
-    BOOKS = Color(red=0.30588236, green=0.7019608, blue=0.3529412)
-    GIFTS = Color(red=0.5529412, green=0.9372549, blue=0.85490197)
-    HOBBIES = Color(red=0.49019608, green=0.83137256, blue=0.7607843)
-    OTHER_FUN = Color(red=0.41960785, green=0.7137255, blue=0.6509804)
-
-    # Getting around
-    GASOLINE = Color(red=0.7764706, green=0.6745098, blue=1)
-    PARKING = Color(red=0.5568628, green=0.4862745, blue=0.7647059)
-    FARES = Color(red=0.85882354, green=0.6431373, blue=0.9843137)
-
-    # Health care
-    DRUGS = Color(red=0.6431373, green=0.7607843, blue=0.95686275)
-    DENTAL_VISION = Color(red=0.42745098, green=0.61960787, blue=0.92156863)
-
-    # Other
-    OTHER = Color(red=0.7176471, green=0.7176471, blue=0.7176471)
+from models.purchase import Purchase
+from utils.cells import a1_to_coords, price_to_decimal, get_earliest_label
+from utils.constants import CellType, GOODS_TYPES, SUMMARY_TYPES
 
 
 class Receipt:
@@ -63,13 +25,6 @@ class Receipt:
     NAME_COLUMN = "B"
     CODE_COLUMN = "C"
     PRICE_COLUMN = "D"
-
-    SUMMARY_TYPES = (
-        CellType.TAX,
-        CellType.SUBTOTAL,
-        CellType.TOTAL,
-        CellType.ACTUALLY_PAID,
-    )
 
     def __init__(self, worksheet):
         self.worksheet = worksheet
@@ -119,7 +74,7 @@ class Receipt:
     @cached_property
     def _names(self):
         """
-        Get all names from the Names column and recognize their type.
+        Get all names from the Names column with recognized type.
 
         This method practices lazy evaluation - the first time a
         certain good gets requested, the entire column of purchased
@@ -127,15 +82,13 @@ class Receipt:
         order to reduce the number of API requests because it takes
         one API call to get the style of each cell.
 
-        :return dict: a map
+        :return dict: a map sorted by cell label
             {
                 "B8": ('Bread', CellType.GROCERY),
                 "B10": ('SUSHI ROLL', CellType.TAKEOUTS),
                 "B14": ('DEBIT', CellType.REGULAR),
                 ...
             }
-
-        :return:
         """
         result = {}
 
@@ -152,7 +105,29 @@ class Receipt:
 
             result[label] = (cell.value, cell_type)
 
+        result = dict(natsorted(result.items()))
         return result
+
+    @cached_property
+    def goods(self):
+        """
+        Return a dict with goods names.
+
+        Unlike _names() this one returns only those which belong to
+        a certain goods category, ignoring all other kind of cells.
+
+        :return dict:
+            {
+                "B8": ('Bread', CellType.GROCERY),
+                "B10": ('SUSHI ROLL', CellType.TAKEOUTS),
+                ...
+            }
+        """
+        return {
+            label: (name, cell_type)
+            for label, (name, cell_type) in self._names.items()
+            if cell_type in GOODS_TYPES
+        }
 
     @cached_property
     def _prices(self):
@@ -161,13 +136,13 @@ class Receipt:
 
         This method practices lazy evaluation too for the same reasons.
 
-        :return dict: a map
+        :return dict: a map sorted by cell label
             {
-                "D13": (Decimal(1.23), CellType.TOTAL),
-                "D15": (Decimal(1.23), CellType.TAX),
-                ...
                 "D10": (Decimal(3.45), CellType.REGULAR),
                 "D12": (Decimal(4.56), CellType.REGULAR),
+                ...
+                "D13": (Decimal(1.23), CellType.TOTAL),
+                "D15": (Decimal(1.23), CellType.TAX),
             }
         """
         result = {}
@@ -184,7 +159,7 @@ class Receipt:
             amount = price_to_decimal(cell.value, worksheet_title=self.worksheet.title, label=label)
 
             is_summary_collected = all(
-                price_type in result for price_type in self.SUMMARY_TYPES
+                price_type in result for price_type in SUMMARY_TYPES
             )
 
             if is_summary_collected:
@@ -197,6 +172,7 @@ class Receipt:
             cell_type = self.get_cell_type(label=label)
             result[label] = (amount, cell_type)
 
+        result = dict(natsorted(result.items()))
         return result
 
     @cached_property
@@ -221,9 +197,9 @@ class Receipt:
         return result
 
     @cached_property
-    def regular_prices(self):
+    def goods_prices(self):
         """
-        Get a dict of all regular prices.
+        Get a dict of all goods prices.
 
         :return dict: a map
             {
@@ -237,6 +213,46 @@ class Receipt:
             for label, (price, cell_type) in self._prices.items()
             if cell_type == CellType.REGULAR
         }
+
+    @cached_property
+    def purchases(self):
+        """
+
+        :return list: list of Purchases
+        """
+        result = []
+        goods = copy(self.goods)
+        goods_prices = copy(self.goods_prices)
+        # we determine if there are any goods with multiple prices per item in order
+        # to determine the strategy of matching goods with the prices. Sometimes,
+        # due to recognition artifacts, price may be shifted up or down comparing to
+        # the item name, and therefore may appear to belong to the item which already
+        # has the price. In some situations multiple prices per item is a valid case.
+        # So, to distinguish that, we check it the total number of goods matches the
+        # total number of prices: if they are equal, then we have an artifact.
+        multiple_prices_per_good = len(goods_prices) > len(goods)
+
+        while goods:
+            good_label, (good_name, good_type) = next(iter(goods.items()))
+            if not multiple_prices_per_good:
+                price_label, price = next(iter(goods_prices.items()))
+            else:
+                # greedy strategy - we should add as many price as we can before
+                # meeting the next good's name
+                raise NotImplementedError
+
+            purchase = Purchase(
+                good_name=good_name,
+                good_type=good_type,
+                good_label=good_label,
+                price=price,
+                price_label=price_label
+            )
+            result.append(purchase)
+            del goods[good_label]
+            del goods_prices[price_label]
+
+        return result
 
     @property
     def actually_paid(self):

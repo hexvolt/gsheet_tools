@@ -6,8 +6,12 @@ from utils.cells import get_earliest_label
 class GetEarliestLabelTestCase(TestCase):
 
     def test_different_rows_cols(self):
-        result = get_earliest_label("B2", "A1", "C3")
-        self.assertEqual(result, "A1")
+        result = get_earliest_label("B2", "A2", "C3")
+        self.assertEqual(result, "A2")
+
+    def test_upper_right_earlier_than_left_bottom(self):
+        result = get_earliest_label("B4", "D2")
+        self.assertEqual(result, "D2")
 
     def test_different_rows_same_cols(self):
         result = get_earliest_label("A1", "B1")
@@ -23,4 +27,8 @@ class GetEarliestLabelTestCase(TestCase):
 
     def test_one_label(self):
         result = get_earliest_label("A1")
+        self.assertEqual(result, "A1")
+
+    def test_empty_label(self):
+        result = get_earliest_label("A1", "")
         self.assertEqual(result, "A1")

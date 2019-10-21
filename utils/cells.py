@@ -29,14 +29,18 @@ def price_to_decimal(value, worksheet_title=None, label=None):
 
 def get_earliest_label(*labels):
     """Return the earliest among labels in left-to-right top-to-bottom order."""
+    labels = [label for label in labels if label]
+    if not labels:
+        raise ValueError("At least one non-empty label must be provided.")
+
     if len(labels) == 1:
         return labels[0]
 
     coords = [a1_to_rowcol(label) for label in labels]
     min_row = min(row for row, _ in coords)
-    earliest_by_row = [(row, col) for row, col in coords if row == min_row]
+    earliest_row = [(row, col) for row, col in coords if row == min_row]
 
-    min_col = min(col for _, col in coords)
-    earliest = [(row, col) for row, col in coords if col == min_col][0]
+    min_col = min(col for _, col in earliest_row)
+    earliest = [(row, col) for row, col in earliest_row if col == min_col][0]
     earliest_label = rowcol_to_a1(*earliest)
     return earliest_label

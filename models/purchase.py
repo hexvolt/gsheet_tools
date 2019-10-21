@@ -14,4 +14,3 @@ class Purchase:
     good_type: CellType
     good_label: str
     price: Decimal
-    price_label: str

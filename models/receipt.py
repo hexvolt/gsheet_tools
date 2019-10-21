@@ -217,12 +217,20 @@ class Receipt:
     @cached_property
     def purchases(self):
         """
+        Match goods` names with appropriate prices and return list of Purchases.
+
+        This method handles possible recognition artifacts when prices are not
+        aligned with the goods and can be shifted up or down. It also handles
+        the case when one good may have multiple prices which need to be added up.
 
         :return list: list of Purchases
         """
         result = []
         goods = copy(self.goods)
         goods_prices = copy(self.goods_prices)
+        if len(goods_prices) < len(goods):
+            raise ValueError(f"Some prices are missing in '{self.worksheet.title}'")
+
         # we determine if there are any goods with multiple prices per item in order
         # to determine the strategy of matching goods with the prices. Sometimes,
         # due to recognition artifacts, price may be shifted up or down comparing to
@@ -234,23 +242,35 @@ class Receipt:
 
         while goods:
             good_label, (good_name, good_type) = next(iter(goods.items()))
-            if not multiple_prices_per_good:
-                price_label, price = next(iter(goods_prices.items()))
+            del goods[good_label]
+
+            if multiple_prices_per_good:
+                # greedy strategy - we should add as many prices as we can
+                # before meeting the next good's name
+                next_good_label = next(iter(goods), '')
+                next_good_met = False
+                result_price = 0
+                while not next_good_met and goods_prices:
+                    price_label, price = next(iter(goods_prices.items()))
+                    result_price += price
+                    del goods_prices[price_label]
+
+                    if not goods_prices:
+                        continue
+                    next_price_label = next(iter(goods_prices), '')
+                    earliest_label = get_earliest_label(next_price_label, next_good_label)
+                    next_good_met = earliest_label == next_good_label
             else:
-                # greedy strategy - we should add as many price as we can before
-                # meeting the next good's name
-                raise NotImplementedError
+                price_label, result_price = next(iter(goods_prices.items()))
+                del goods_prices[price_label]
 
             purchase = Purchase(
                 good_name=good_name,
                 good_type=good_type,
                 good_label=good_label,
-                price=price,
-                price_label=price_label
+                price=result_price,
             )
             result.append(purchase)
-            del goods[good_label]
-            del goods_prices[price_label]
 
         return result
 

@@ -59,7 +59,11 @@ def reorder(filename):
 @click.command()
 @click.argument("filename")
 def validate(filename):
-    """Analyze receipts sheet for duplicate tabs."""
+    """
+    Validate prices in all tabs.
+
+    If numbers don't add up there - show the warning.
+    """
     receipts_sheet = ReceiptsSheet(filename)
     click.echo("Validating prices in all tabs...")
     receipts_sheet.validate()

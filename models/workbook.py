@@ -37,12 +37,10 @@ class Workbook:
         dest_file_id = dest_spreadsheet.id
 
         url = f"{SPREADSHEETS_API_V4_BASE_URL}/{source_file_id}/sheets/{source_sheet_id}:copyTo"
-        payload = {
-            "destinationSpreadsheetId": dest_file_id
-        }
-        response = self.client.request('post', url, json=payload)
+        payload = {"destinationSpreadsheetId": dest_file_id}
+        response = self.client.request("post", url, json=payload)
 
-        new_title = json.loads(response.content)['title']
+        new_title = json.loads(response.content)["title"]
         return new_title
 
     def move_tabs(self, one_by_one, dry=False, unambiguous_only=False):
@@ -51,7 +49,9 @@ class Workbook:
         """
         for worksheet in self.spreadsheet.worksheets():
             receipt = Receipt(worksheet)
-            click.echo(f"'{worksheet.title}' ({receipt.store}) will go to ==> ", nl=False)
+            click.echo(
+                f"'{worksheet.title}' ({receipt.store}) will go to ==> ", nl=False
+            )
             try:
                 date = parse(extract_date_string(worksheet.title))
             except ValueError as e:
@@ -76,7 +76,9 @@ class Workbook:
 
             if not one_by_one or (one_by_one and click.confirm(f"Move?", default=True)):
                 try:
-                    new_title = self.copy_worksheet_to(src_worksheet=worksheet, dest_filename=dest_filename)
+                    new_title = self.copy_worksheet_to(
+                        src_worksheet=worksheet, dest_filename=dest_filename
+                    )
                     self.spreadsheet.del_worksheet(worksheet)
                 except Exception as e:
                     result_msg = RESULT_ERROR.format(e)

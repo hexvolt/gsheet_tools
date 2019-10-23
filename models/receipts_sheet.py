@@ -16,6 +16,7 @@ class ReceiptsSheet:
         self.spreadsheet = client.open(filename)
 
     def rename_tabs(self, one_by_one, dry=False):
+        """Rename each tab title to reflect the day number of the receipt."""
         names_registry = set()
         for worksheet in self.spreadsheet.worksheets():
             title_before = worksheet.title
@@ -71,6 +72,7 @@ class ReceiptsSheet:
             click.echo(RESULT_OK)
 
     def validate(self):
+        """Check if the prices in each tab add up correctly."""
         for worksheet in self.spreadsheet.worksheets():
             click.echo(f"{worksheet.title} ==> ", nl=False)
             try:

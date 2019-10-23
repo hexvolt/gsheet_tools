@@ -11,6 +11,14 @@ def extract_number(string):
     return int("".join(filter(str.isdigit, string)))
 
 
+def extract_date_string(tab_title):
+    """Extract date portion of string from title."""
+    try:
+        return re.search(DATE_PATTERN, tab_title)[0]
+    except (TypeError, IndexError):
+        raise ValueError(f"Date not found in title {tab_title}")
+
+
 def get_normalized_title(tab_title, filename, names_registry=None):
     """
     Extract the day number from the title.
@@ -26,10 +34,7 @@ def get_normalized_title(tab_title, filename, names_registry=None):
         Copy of 2018/08/01 PM ==> 01
         Copy of 18/08/07 1 ==> 07
     """
-    try:
-        match_date = re.search(DATE_PATTERN, tab_title)[0]
-    except (TypeError, IndexError):
-        raise ValueError(f"Date not found in title {tab_title}")
+    match_date = extract_date_string(tab_title)
 
     try:
         is_normalized = 1 <= int(match_date) <= 31

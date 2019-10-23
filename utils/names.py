@@ -3,7 +3,7 @@ from string import ascii_letters
 
 from dateutil import parser
 
-DATE_PATTERN = re.compile(r"[\d\/.\-\\]+")
+DATE_PATTERN = re.compile(r"(\d{2,4}|[\/.\-\\])+")
 
 
 def extract_number(string):
@@ -16,7 +16,7 @@ def extract_date_string(tab_title):
     try:
         return re.search(DATE_PATTERN, tab_title)[0]
     except (TypeError, IndexError):
-        raise ValueError(f"Date not found in title {tab_title}")
+        raise ValueError(f"Date not found in title '{tab_title}'")
 
 
 def get_normalized_title(tab_title, filename, names_registry=None):

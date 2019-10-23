@@ -1,6 +1,7 @@
 import click
 
 from models.receipts_sheet import ReceiptsSheet
+from models.workbook import Workbook
 
 
 @click.command()
@@ -71,3 +72,26 @@ def find_duplicates(filename):
     receipts_sheet = ReceiptsSheet(filename)
     click.echo("Looking for duplicate receipts...")
     receipts_sheet.find_duplicates()
+
+
+@click.command()
+@click.argument("filename")
+@click.option("--one-by-one", is_flag=True)
+@click.option("--unambiguous-only", is_flag=True,)
+def move_from_workbook(filename, one_by_one, unambiguous_only):
+    """
+    Move receipt tabs from workbook to appropriate monthly spreadsheets.
+
+    The destination for each tab is determined by its title:
+        "22.11.2017" will go to the spreadsheet with the name "2017-11"
+
+    When --unambiguous-all option is specified, only unambiguous tabs
+    will be processed.
+    """
+    workbook = Workbook(filename)
+    click.echo("Reading tabs, preparing preview...")
+    workbook.move_tabs(one_by_one=one_by_one, dry=True, unambiguous_only=unambiguous_only)
+
+    if click.confirm("Continue?"):
+        click.echo("Moving tabs to appropriate monthly spreadsheets...")
+        workbook.move_tabs(one_by_one=one_by_one, unambiguous_only=unambiguous_only)

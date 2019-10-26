@@ -1,6 +1,6 @@
 import click
 
-from models.receipts_sheet import ReceiptsSheet
+from models.receipt_book import ReceiptBook
 from models.workbook import Workbook
 
 
@@ -11,7 +11,7 @@ from models.workbook import Workbook
 @click.option("--validate/--no-validate", default=False)
 def normalize(filename, one_by_one, reorder, validate):
     """
-    Normalize all tabs in the receipts spreadsheet.
+    Normalize all tabs in the receipt book.
 
     This includes:
     1. Renaming
@@ -28,32 +28,32 @@ def normalize(filename, one_by_one, reorder, validate):
     4. Identification of potential duplicates.
     """
     click.echo(f"Analyzing tabs in {filename}...")
-    receipts_sheet = ReceiptsSheet(filename)
+    receipt_book = ReceiptBook(filename)
 
-    receipts_sheet.rename_tabs(one_by_one=one_by_one, dry=True)
+    receipt_book.rename_tabs(one_by_one=one_by_one, dry=True)
 
     if click.confirm("Rename all tabs (tabs without proper date will be skipped)?"):
-        receipts_sheet.rename_tabs(one_by_one=one_by_one)
+        receipt_book.rename_tabs(one_by_one=one_by_one)
 
     if reorder:
         click.echo("Sorting all tabs alphabetically...")
-        receipts_sheet.reorder()
+        receipt_book.reorder()
 
     if validate:
         click.echo("Validating prices in all tabs...")
-        receipts_sheet.validate()
+        receipt_book.validate()
 
     click.echo("Looking for duplicate receipts...")
-    receipts_sheet.find_duplicates()
+    receipt_book.find_duplicates()
 
 
 @click.command()
 @click.argument("filename")
 def reorder(filename):
-    """Reorder all tabs in the receipts sheet alphabetically."""
-    receipts_sheet = ReceiptsSheet(filename)
+    """Reorder all tabs in the receipt book alphabetically."""
+    receipt_book = ReceiptBook(filename)
     click.echo("Sorting all tabs alphabetically...")
-    receipts_sheet.reorder()
+    receipt_book.reorder()
 
 
 @click.command()
@@ -64,18 +64,18 @@ def validate(filename):
 
     If numbers don't add up there - show the warning.
     """
-    receipts_sheet = ReceiptsSheet(filename)
+    receipt_book = ReceiptBook(filename)
     click.echo("Validating prices in all tabs...")
-    receipts_sheet.validate()
+    receipt_book.validate()
 
 
 @click.command()
 @click.argument("filename")
 def find_duplicates(filename):
-    """Analyze receipts sheet for duplicate tabs."""
-    receipts_sheet = ReceiptsSheet(filename)
+    """Analyze receipt book for duplicate tabs."""
+    receipt_book = ReceiptBook(filename)
     click.echo("Looking for duplicate receipts...")
-    receipts_sheet.find_duplicates()
+    receipt_book.find_duplicates()
 
 
 @click.command()

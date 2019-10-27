@@ -220,6 +220,9 @@ class Receipt:
         """
         Return a sum of all prices of each type.
 
+        NOTE: this is isolated from purchases, and there is no
+        grocery types here. This is only about summary prices
+        and all others fall into REGULAR.
         :return dict:
             {
                 CellType.TOTAL: Decimal(3.45),
@@ -340,6 +343,14 @@ class Receipt:
             result[purchase.good_type].append(purchase)
         return result
 
+    def get_category_price(self, good_type):
+        """Return total price of all purchases of certain category (good type)."""
+        mapping = {
+            good_type: sum(purchase.price for purchase in purchases)
+            for good_type, purchases in self.purchases_by_type.items()
+        }
+        return mapping.get(good_type)
+
     @property
     def actually_paid(self):
         return self.price_stats.get(CellType.ACTUALLY_PAID)
@@ -361,15 +372,7 @@ class Receipt:
 
     @cached_property
     def tax_belongs_to(self) -> CellType:
-        """
-        Returns the good type where the tax allegedly belongs.
-
-        Rules:
-            - if all purchases fall into one category, then taxes belong there;
-            - if there are categories other than groceries, then it is the biggest one;
-            - but if the tax is more than 13% of total price of this category, then it
-            likely belongs to the most expensive category (including groceries).
-        """
+        """Returns the good type where the tax allegedly belongs."""
         if len(self.purchases_by_type) == 1:
             return list(self.purchases_by_type.keys())[0]
 
@@ -382,13 +385,12 @@ class Receipt:
         biggest_non_grocery_type = max(Counter(non_grocery_types))
         result = biggest_non_grocery_type
 
-        if self.tax > (HST * self.price_stats[biggest_non_grocery_type]):
+        if self.tax > (HST * self.get_category_price(biggest_non_grocery_type)):
             good_stats = {
-                good_type: total_price
-                for good_type, total_price in self.price_stats
-                if good_type in GOODS_TYPES
+                good_type: self.get_category_price(good_type)
+                for good_type in self.purchases_by_type
             }
-            most_expensive_type, _ = max(good_stats, key=lambda o: o[1])
+            most_expensive_type, _ = max(good_stats.items(), key=lambda o: o[1])
             result = most_expensive_type
 
         return result
@@ -407,6 +409,8 @@ class Receipt:
                 f"Subtotal {calculated_sum} + tax {tax} is not equal to total amount {self.total} "
                 f"in tab '{self.worksheet.title}'"
             )
+        elif match_total:
+            return True
 
         if self.subtotal:
             match_subtotal = calculated_sum == self.subtotal

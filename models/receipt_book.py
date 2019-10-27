@@ -1,19 +1,15 @@
 import click
 
+from models.base import BaseSpreadsheet
 from models.receipt import Receipt
-from utils.auth import get_client
 from utils.constants import RESULT_SKIPPED, RESULT_OK, RESULT_ERROR, RESULT_WARNING
 from utils.names import get_normalized_title
 
 
-class ReceiptBook:
+class ReceiptBook(BaseSpreadsheet):
     """
     Represents a spreadsheet file with a collection of receipts for the whole month.
     """
-
-    def __init__(self, filename):
-        client = get_client()
-        self.spreadsheet = client.open(filename)
 
     def rename_tabs(self, one_by_one, dry=False):
         """Rename each tab title to reflect the day number of the receipt."""

@@ -1,3 +1,4 @@
+from datetime import date
 from decimal import Decimal
 
 from attr import dataclass
@@ -15,3 +16,4 @@ class Purchase:
     good_type: CellType
     good_label: str
     price: Decimal
+    date: date

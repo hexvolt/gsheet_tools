@@ -4,20 +4,16 @@ import click
 from dateutil.parser import parse
 from gspread.urls import SPREADSHEETS_API_V4_BASE_URL
 
+from models.base import BaseSpreadsheet
 from models.receipt import Receipt
-from utils.auth import get_client
 from utils.constants import RESULT_OK, RESULT_ERROR, RESULT_WARNING
 from utils.names import extract_date_string
 
 
-class Workbook:
+class Workbook(BaseSpreadsheet):
     """
     Represents the source file with unordered receipts.
     """
-
-    def __init__(self, filename):
-        self.client = get_client()
-        self.spreadsheet = self.client.open(filename)
 
     def copy_worksheet_to(self, src_worksheet, dest_filename):
         """
@@ -45,7 +41,7 @@ class Workbook:
 
     def move_tabs(self, one_by_one, dry=False, unambiguous_only=False):
         """
-        Move each tab of the workbook to an appropriate Receipt Sheet.
+        Move each tab of the workbook to an appropriate Receipt book.
         """
         for worksheet in self.spreadsheet.worksheets():
             receipt = Receipt(worksheet)

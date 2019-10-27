@@ -1,6 +1,10 @@
+from collections import defaultdict
 from copy import copy
+from datetime import datetime, date
+from typing import List
 
 from cached_property import cached_property
+from dateutil.parser import parse
 from gspread import Cell
 from gspread.utils import rowcol_to_a1, a1_to_rowcol
 from gspread_formatting import get_user_entered_format
@@ -9,11 +13,12 @@ from natsort import natsorted
 from models.purchase import Purchase
 from utils.cells import a1_to_coords, price_to_decimal, get_earliest_label
 from utils.constants import CellType, GOODS_TYPES, SUMMARY_TYPES
+from utils.names import extract_number
 
 
 class Receipt:
     """
-    Represents a worksheet with receipt.
+    Represents a worksheet with a receipt.
 
     Encapsulates all data about receipt.
     """
@@ -27,8 +32,37 @@ class Receipt:
     PRICE_COLUMN = "D"
 
     def __init__(self, worksheet):
+        """Instantiate the Receipt from the *normalized worksheet* tab."""
         self.worksheet = worksheet
         self.content = worksheet.get_all_values()
+
+    @cached_property
+    def date(self) -> date:
+        """
+        Return the date the receipt belongs to.
+
+        Currently works only if Receipt is created from
+        normalized tab that belongs to appropriate receipt book
+        with proper title.
+
+        So far this is the only way to be sure date is unambiguous,
+        because the step of sorting receipts into receipt books
+        is done manually and the date is validated by human.
+        """
+        try:
+            day_from_title = int(extract_number(self.worksheet.title))
+            date_from_spreadsheet = parse(self.worksheet.spreadsheet.title)
+        except ValueError:
+            raise NotImplementedError(
+                "Receipt must have normalized title with day number and "
+                "belong to a specific receipt book of name 'YYYY-MM'."
+            )
+        else:
+            return date(
+                year=date_from_spreadsheet.year,
+                month=date_from_spreadsheet.month,
+                day=day_from_title,
+            )
 
     @property
     def store(self):
@@ -217,7 +251,7 @@ class Receipt:
         }
 
     @cached_property
-    def purchases(self):
+    def purchases(self) -> List[Purchase]:
         """
         Match goods` names with appropriate prices and return list of Purchases.
 
@@ -280,9 +314,18 @@ class Receipt:
                 good_type=good_type,
                 good_label=good_label,
                 price=result_price,
+                date=self.date,
             )
             result.append(purchase)
 
+        return result
+
+    @property
+    def purchases_by_type(self):
+        """Return Purchases of the receipt grouped by their good type."""
+        result = defaultdict(list)
+        for purchase in self.purchases:
+            result[purchase.good_type].append(purchase)
         return result
 
     @property

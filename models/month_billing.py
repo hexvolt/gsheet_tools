@@ -1,5 +1,6 @@
 from cached_property import cached_property
 from dateutil.parser import parse
+from gspread import Cell
 from gspread.utils import a1_to_rowcol, rowcol_to_a1
 
 from models.receipt import Receipt
@@ -11,6 +12,7 @@ class MonthBilling:
     """Represents a monthly billing tab."""
 
     FIRST_DAY_COLUMN = "E"
+    LAST_DAY_COLUMN = "AI"
 
     CATEGORY_ROWS = {
         CellType.GROCERY: 14,
@@ -97,4 +99,12 @@ class MonthBilling:
         return rowcol_to_a1(row, col)
 
     def clear_expenses(self):
-        pass
+        """Clear all expenses fot the month in all categories."""
+        _, col_1 = a1_to_rowcol(f"{self.FIRST_DAY_COLUMN}1")
+        _, col_31 = a1_to_rowcol(f"{self.LAST_DAY_COLUMN}1")
+        cell_list = [
+            Cell(row=row, col=col, value="")
+            for col in range(col_1, col_31 + 1)
+            for row in self.CATEGORY_ROWS.values()
+        ]
+        self.worksheet.update_cells(cell_list=cell_list)

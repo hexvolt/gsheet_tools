@@ -36,3 +36,17 @@ def import_to_billing(source_filename, billing_filename, one_by_one):
             except Exception as e:
                 result_msg = RESULT_ERROR.format(e)
             click.echo(result_msg)
+
+
+@click.command()
+@click.argument("billing_filename")
+@click.argument("month")
+def clear_expenses(billing_filename, month):
+    """Clear all expenses in the month billing spreadsheet."""
+    billing_book = BillingBook(billing_filename)
+    month_billing = billing_book.get_month_billing(month=month)
+    if click.confirm(
+        f"This will delete all expenses from `{billing_filename}` month number {month}. Continue?",
+        default=False,
+    ):
+        month_billing.clear_expenses()

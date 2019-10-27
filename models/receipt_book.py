@@ -1,4 +1,5 @@
 import click
+from cached_property import cached_property
 
 from models.base import BaseSpreadsheet
 from models.receipt import Receipt
@@ -10,6 +11,10 @@ class ReceiptBook(BaseSpreadsheet):
     """
     Represents a spreadsheet file with a collection of receipts for the whole month.
     """
+
+    @cached_property
+    def receipts(self):
+        raise NotImplementedError
 
     def rename_tabs(self, one_by_one, dry=False):
         """Rename each tab title to reflect the day number of the receipt."""

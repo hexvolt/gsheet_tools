@@ -34,7 +34,11 @@ class Receipt:
     def __init__(self, worksheet):
         """Instantiate the Receipt from the *normalized worksheet* tab."""
         self.worksheet = worksheet
-        self.content = worksheet.get_all_values()
+
+    @cached_property
+    def content(self):
+        """Lazy load of entire spreadsheet content."""
+        return self.worksheet.get_all_values()
 
     @cached_property
     def date(self) -> date:

@@ -35,7 +35,6 @@ class MonthBilling:
 
     def __init__(self, worksheet):
         self.worksheet = worksheet
-        self.content = worksheet.get_all_values()
 
     @cached_property
     def month(self) -> int:

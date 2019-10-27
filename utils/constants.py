@@ -1,7 +1,10 @@
+from decimal import Decimal
 from enum import Enum
 
 import click
 from gspread_formatting import Color
+
+HST = Decimal(0.13)
 
 RESULT_OK = click.style("OK.", fg="green")
 RESULT_WARNING = click.style("WARNING: {}", fg="yellow")

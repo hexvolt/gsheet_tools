@@ -12,7 +12,7 @@ from natsort import natsorted
 
 from models.purchase import Purchase
 from utils.cells import a1_to_coords, price_to_decimal, get_earliest_label
-from utils.constants import CellType, GOODS_TYPES, SUMMARY_TYPES
+from utils.constants import CellType, GOODS_TYPES, SUMMARY_TYPES, HST
 from utils.names import extract_number
 
 
@@ -359,14 +359,16 @@ class Receipt:
     def tax(self):
         return self.price_stats.get(CellType.TAX)
 
-    @property
+    @cached_property
     def tax_belongs_to(self) -> CellType:
         """
         Returns the good type where the tax allegedly belongs.
 
         Rules:
-            if all purchases fall into one category, then taxes belong there;
-            if there are categories other than groceries, then it is the biggest one.
+            - if all purchases fall into one category, then taxes belong there;
+            - if there are categories other than groceries, then it is the biggest one;
+            - but if the tax is more than 13% of total price of this category, then it
+            likely belongs to the most expensive category (including groceries).
         """
         if len(self.purchases_by_type) == 1:
             return list(self.purchases_by_type.keys())[0]
@@ -377,8 +379,19 @@ class Receipt:
             for _ in purchases
             if good_type != CellType.GROCERY
         ]
-        biggest_non_grocery = max(Counter(non_grocery_types))
-        return biggest_non_grocery
+        biggest_non_grocery_type = max(Counter(non_grocery_types))
+        result = biggest_non_grocery_type
+
+        if self.tax > (HST * self.price_stats[biggest_non_grocery_type]):
+            good_stats = {
+                good_type: total_price
+                for good_type, total_price in self.price_stats
+                if good_type in GOODS_TYPES
+            }
+            most_expensive_type, _ = max(good_stats, key=lambda o: o[1])
+            result = most_expensive_type
+
+        return result
 
     def prices_are_valid(self, raise_exception=True):
         """Return True if all prices adds up correctly to subtotal and total numbers."""

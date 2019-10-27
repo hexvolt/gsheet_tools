@@ -10,11 +10,23 @@ from utils.names import get_normalized_title
 class ReceiptBook(BaseSpreadsheet):
     """
     Represents a spreadsheet file with a collection of receipts for the whole month.
+
+    Typical name `2019-01`.
     """
 
     @cached_property
+    def _receipts_map(self):
+        return {
+            worksheet.title: Receipt(worksheet=worksheet)
+            for worksheet in self.spreadsheet.worksheets()
+        }
+
+    @property
     def receipts(self):
-        raise NotImplementedError
+        return self._receipts_map.values()
+
+    def get_receipt(self, title):
+        return self._receipts_map.get(title)
 
     def rename_tabs(self, one_by_one, dry=False):
         """Rename each tab title to reflect the day number of the receipt."""

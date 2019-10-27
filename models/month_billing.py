@@ -48,7 +48,8 @@ class MonthBilling:
     def year(self) -> int:
         """Return the year current billing month sheet belongs to."""
         try:
-            return parse(extract_number(self.worksheet.spreadsheet.title)).year
+            year_string = extract_number(self.worksheet.spreadsheet.title)
+            return parse(str(year_string)).year
         except ValueError:
             raise ValueError("Billing book must have a year in the title.")
 

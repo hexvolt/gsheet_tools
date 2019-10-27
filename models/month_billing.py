@@ -54,7 +54,13 @@ class MonthBilling:
             raise ValueError("Billing book must have a year in the title.")
 
     def import_receipt(self, receipt: Receipt):
-        """Adds the data from the receipt to the month billing spreadsheet."""
+        """
+        Adds the data from the receipt to the month billing spreadsheet.
+
+        Rules for HST/taxes:
+            if all purchases are groceries, then it is added too total grocery price;
+            if there are other categories, then it is added to the biggest one.
+        """
         date_match = receipt.date.month == self.month and receipt.date.year == self.year
         if not date_match:
             raise ValueError(
@@ -77,6 +83,9 @@ class MonthBilling:
                 cell.value += (
                     f"+{purchase.price}" if cell.value else f"={purchase.price}"
                 )
+
+            if good_type == receipt.tax_belongs_to:
+                cell.value += f"+{receipt.tax}"
 
         self.worksheet.update_cells(cells_to_update, value_input_option="USER_ENTERED")
 

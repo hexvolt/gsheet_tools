@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, Counter
 from copy import copy
 from datetime import datetime, date
 from typing import List
@@ -326,7 +326,15 @@ class Receipt:
 
     @property
     def purchases_by_type(self):
-        """Return Purchases of the receipt grouped by their good type."""
+        """
+        Return Purchases of the receipt grouped by their good type.
+
+        return: {
+            CellType.GROCERIES: [Purchase(), Purchase()],
+            CellType.HOUSEKEEPING: [Purchase(), ...],
+            ...
+        }
+        """
         result = defaultdict(list)
         for purchase in self.purchases:
             result[purchase.good_type].append(purchase)
@@ -350,6 +358,27 @@ class Receipt:
     @property
     def tax(self):
         return self.price_stats.get(CellType.TAX)
+
+    @property
+    def tax_belongs_to(self) -> CellType:
+        """
+        Returns the good type where the tax allegedly belongs.
+
+        Rules:
+            if all purchases fall into one category, then taxes belong there;
+            if there are categories other than groceries, then it is the biggest one.
+        """
+        if len(self.purchases_by_type) == 1:
+            return list(self.purchases_by_type.keys())[0]
+
+        non_grocery_types = [
+            good_type
+            for good_type, purchases in self.purchases_by_type.items()
+            for _ in purchases
+            if good_type != CellType.GROCERY
+        ]
+        biggest_non_grocery = max(Counter(non_grocery_types))
+        return biggest_non_grocery
 
     def prices_are_valid(self, raise_exception=True):
         """Return True if all prices adds up correctly to subtotal and total numbers."""

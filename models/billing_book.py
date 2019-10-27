@@ -24,7 +24,11 @@ class BillingBook(BaseSpreadsheet):
             result[month] = MonthBilling(worksheet=worksheet)
 
         if len(result) != 12:
-            click.echo(RESULT_WARNING.format(f"Only {len(result)} moths found in year billing book."))
+            click.echo(
+                RESULT_WARNING.format(
+                    f"Only {len(result)} moths found in year billing book."
+                )
+            )
         return result
 
     @property

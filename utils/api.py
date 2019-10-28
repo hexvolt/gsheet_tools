@@ -81,8 +81,10 @@ class QuotaCompliantClient(Client):
             }
         :param bool replace: if False, the notes will be appended to existing ones
         """
-        spreadsheet_id = worksheet.spreadsheet.id
+        if not labels_notes:
+            return
 
+        spreadsheet_id = worksheet.spreadsheet.id
         existing_notes = {} if replace else self.get_all_notes(worksheet)
 
         url = f"{SPREADSHEETS_API_V4_BASE_URL}/{spreadsheet_id}:batchUpdate"

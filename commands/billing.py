@@ -9,8 +9,9 @@ from utils.constants import RESULT_ERROR, RESULT_OK
 @click.command()
 @click.argument("source_filename")
 @click.argument("billing_filename")
+@click.argument("note_threshold", default=50)
 @click.option("--one-by-one", is_flag=True)
-def import_to_billing(source_filename, billing_filename, one_by_one):
+def import_to_billing(source_filename, billing_filename, note_threshold, one_by_one):
     """
     Import all receipts from the Receipt book into Billing book.
 
@@ -32,7 +33,7 @@ def import_to_billing(source_filename, billing_filename, one_by_one):
         if not one_by_one or one_by_one and click.confirm(f"Rename?", default=True):
             result_msg = RESULT_OK
             try:
-                month_billing.import_receipt(receipt)
+                month_billing.import_receipt(receipt, note_threshold=note_threshold)
             except Exception as e:
                 result_msg = RESULT_ERROR.format(e)
             click.echo(result_msg)

@@ -81,7 +81,7 @@ def find_duplicates(filename):
         default=True,
     ):
         return
-    click.echo("Looking for duplicate receipts...")
+    click.echo("Gathering data...")
     receipt_book.find_duplicates()
 
 

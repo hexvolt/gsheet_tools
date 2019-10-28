@@ -108,10 +108,11 @@ class ReceiptBook(BaseSpreadsheet):
                 (receipt.date, receipt.subtotal, receipt.total, receipt.actually_paid)
             )
 
-        for attrs, count in Counter(comparison_attrs):
+        for attrs, count in Counter(comparison_attrs).items():
             if count > 1:
                 click.echo(
                     RESULT_WARNING.format(
                         f"There are likely {count} duplicates of receipt from {attrs[0]}"
                     )
                 )
+        click.echo(RESULT_OK.format(f"No other duplicates found."))

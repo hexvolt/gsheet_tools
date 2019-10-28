@@ -13,6 +13,11 @@ RESULT_ERROR = click.style("ERROR: {}", fg="red")
 
 
 class CellType(Enum):
+    """
+    Describe the colors in the source Receipt spreadsheet that a certain
+    categories were marked with.
+    """
+
     REGULAR = None
     TAX = Color(red=0.8, green=0.25490198, blue=0.14509805)
     SUBTOTAL = Color(red=0.41568628, green=0.65882355, blue=0.30980393)

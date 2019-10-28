@@ -1,7 +1,7 @@
 import click
 import gspread
 
-from utils.auth import get_credentials
+from utils.api import get_credentials
 
 
 @click.command()

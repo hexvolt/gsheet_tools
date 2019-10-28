@@ -1,3 +1,5 @@
+from collections import Counter
+
 import click
 from cached_property import cached_property
 
@@ -99,4 +101,17 @@ class ReceiptBook(BaseSpreadsheet):
                 click.echo(RESULT_OK)
 
     def find_duplicates(self):
-        click.echo("Not implemented.")
+        comparison_attrs = []
+        for receipt in self.receipts:
+            click.echo(f"Reading receipt {receipt.worksheet.title}")
+            comparison_attrs.append(
+                (receipt.date, receipt.subtotal, receipt.total, receipt.actually_paid)
+            )
+
+        for attrs, count in Counter(comparison_attrs):
+            if count > 1:
+                click.echo(
+                    RESULT_WARNING.format(
+                        f"There are likely {count} duplicates of receipt from {attrs[0]}"
+                    )
+                )

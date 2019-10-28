@@ -1,4 +1,4 @@
-from utils.auth import get_client
+from utils.api import get_client
 
 
 class BaseSpreadsheet:

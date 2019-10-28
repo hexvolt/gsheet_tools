@@ -55,9 +55,12 @@ class MonthBilling:
         except ValueError:
             raise ValueError("Billing book must have a year in the title.")
 
-    def import_receipt(self, receipt: Receipt):
+    def import_receipt(self, receipt: Receipt, note_threshold=100):
         """
         Adds the data from the receipt to the month billing spreadsheet.
+
+        A note with the list of purchase names is inserted to the cell if
+        the total price for this cell exceeds the threshold.
 
         Rules for HST/taxes:
             if all purchases are groceries, then it is added too total grocery price;
@@ -71,6 +74,7 @@ class MonthBilling:
             )
 
         cells_to_update = []
+        notes_to_add = {}
         for good_type, purchases in receipt.purchases_by_type.items():
             if not purchases:
                 continue
@@ -89,6 +93,14 @@ class MonthBilling:
             if good_type == receipt.tax_belongs_to:
                 cell.value += f"+{receipt.tax}"
 
+            total_price = receipt.get_category_price(good_type=good_type) + cell.value
+            if total_price > note_threshold:
+                note = ", ".join(purchase.good_name for purchase in purchases)
+                notes_to_add[destination_label] = note
+
+        self.worksheet.spreadsheet.client.insert_notes(
+            worksheet=self.worksheet, labels_notes=notes_to_add, replace=False
+        )
         self.worksheet.update_cells(cells_to_update, value_input_option="USER_ENTERED")
 
     def get_destination_label(self, purchase) -> str:

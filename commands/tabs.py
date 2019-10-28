@@ -7,9 +7,10 @@ from models.workbook import Workbook
 @click.command()
 @click.argument("filename")
 @click.option("--one-by-one", is_flag=True)
-@click.option("--reorder/--no-reorder", default=True)
+@click.option("--reorder/--no-reorder", default=False)
 @click.option("--validate/--no-validate", default=False)
-def normalize(filename, one_by_one, reorder, validate):
+@click.option("--find-duplicates/--no-find-duplicates", default=False)
+def normalize(filename, one_by_one, reorder, validate, find_duplicates):
     """
     Normalize all tabs in the receipt book.
 
@@ -43,8 +44,9 @@ def normalize(filename, one_by_one, reorder, validate):
         click.echo("Validating prices in all tabs...")
         receipt_book.validate()
 
-    click.echo("Looking for duplicate receipts...")
-    receipt_book.find_duplicates()
+    if find_duplicates:
+        click.echo("Looking for duplicate receipts...")
+        receipt_book.find_duplicates()
 
 
 @click.command()
@@ -74,6 +76,11 @@ def validate(filename):
 def find_duplicates(filename):
     """Analyze receipt book for duplicate tabs."""
     receipt_book = ReceiptBook(filename)
+    if not click.confirm(
+        "This may take a while, make sure that the titles of all tabs are normalized. Continue?",
+        default=True,
+    ):
+        return
     click.echo("Looking for duplicate receipts...")
     receipt_book.find_duplicates()
 

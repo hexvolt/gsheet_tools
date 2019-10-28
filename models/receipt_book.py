@@ -25,7 +25,7 @@ class ReceiptBook(BaseSpreadsheet):
 
     @property
     def receipts(self):
-        return self._receipts_map.values()
+        return list(self._receipts_map.values())
 
     def get_receipt(self, title):
         return self._receipts_map.get(title)

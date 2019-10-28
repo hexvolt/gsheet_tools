@@ -7,9 +7,9 @@ from cached_property import cached_property
 from dateutil.parser import parse
 from gspread import Cell
 from gspread.utils import rowcol_to_a1, a1_to_rowcol
-from gspread_formatting import get_user_entered_format
 from natsort import natsorted
 
+from models.base import Color
 from models.purchase import Purchase
 from utils.cells import a1_to_coords, price_to_decimal, get_earliest_label
 from utils.constants import CellType, GOODS_TYPES, SUMMARY_TYPES, HST
@@ -39,6 +39,16 @@ class Receipt:
     def content(self):
         """Lazy load of entire spreadsheet content."""
         return self.worksheet.get_all_values()
+
+    @cached_property
+    def _background_colors(self):
+        client = self.worksheet.spreadsheet.client
+        cells_colors = client.get_all_colors(self.worksheet)
+        result = {
+            label: Color(**color_props)
+            for label, color_props in cells_colors.items()
+        }
+        return result
 
     @cached_property
     def date(self) -> date:
@@ -99,8 +109,7 @@ class Receipt:
             )
 
     def get_cell_color(self, label):
-        native_format = get_user_entered_format(self.worksheet, label=label)
-        return native_format.backgroundColor
+        return self._background_colors.get(label)
 
     def get_cell_type(self, label):
         cell_color = self.get_cell_color(label)

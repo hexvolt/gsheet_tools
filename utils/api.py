@@ -16,31 +16,6 @@ class QuotaCompliantClient(Client):
         time.sleep(QUOTA_DELAY)
         return super().request(*args, **kwargs)
 
-    def insert_note(self, worksheet, label, note):
-        """Insert one note into the google spreadsheet cell."""
-        row, col = a1_to_coords(label)
-        spreadsheet_id = worksheet.spreadsheet.id
-
-        url = f"{SPREADSHEETS_API_V4_BASE_URL}/{spreadsheet_id}:batchUpdate"
-        payload = {
-            "requests": [
-                {
-                    "updateCells": {
-                        "range": {
-                            "sheetId": worksheet.id,
-                            "startRowIndex": row,
-                            "endRowIndex": row + 1,
-                            "startColumnIndex": col,
-                            "endColumnIndex": col + 1,
-                        },
-                        "rows": [{"values": [{"note": note}]}],
-                        "fields": "note",
-                    }
-                }
-            ]
-        }
-        self.request("post", url, json=payload)
-
     def get_all_notes(self, worksheet):
         """
         Get notes of all cells from a certain worksheet.
@@ -110,6 +85,33 @@ class QuotaCompliantClient(Client):
             )
         self.request("post", url, json={"requests": [requests_payload]})
 
+    def get_all_colors(self, worksheet):
+        """
+        Return background colors of all cells.
+
+        :return dict: {
+            "A1": {"red": 0.858689, "green": 0.3425, "blue": 0.85004},
+            ...
+        }
+        """
+        result = {}
+        spreadsheet_id = worksheet.spreadsheet.id
+        url = (
+            f"{SPREADSHEETS_API_V4_BASE_URL}/{spreadsheet_id}?ranges='{worksheet.title}'"
+            f"&fields=sheets/data/rowData/values/userEnteredFormat/backgroundColor"
+        )
+        response = self.request("get", url)
+        content = json.loads(response.content)
+
+        row_containers = content["sheets"][0]["data"][0]["rowData"]
+        for row, row_container in enumerate(row_containers, 1):
+            cell_containers = row_container.get("values", [])
+            for col, cell_container in enumerate(cell_containers, 1):
+                formatting = cell_container.get("userEnteredFormat")
+                if formatting:
+                    label = rowcol_to_a1(row=row, col=col)
+                    result[label] = formatting.get('backgroundColor')
+        return result
 
 def get_credentials():
     credentials = ServiceAccountCredentials.from_json_keyfile_name(

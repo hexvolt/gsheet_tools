@@ -6,7 +6,6 @@ certifi==2019.9.11
 chardet==3.0.4
 Click==7.0
 gspread==3.1.0
-gspread-formatting==0.0.7
 httplib2==0.14.0
 idna==2.8
 natsort==6.0.0

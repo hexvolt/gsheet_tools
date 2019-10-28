@@ -2,7 +2,8 @@ from decimal import Decimal
 from enum import Enum
 
 import click
-from gspread_formatting import Color
+
+from models.base import Color
 
 HST = Decimal(0.13)
 

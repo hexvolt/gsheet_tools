@@ -16,6 +16,32 @@ class QuotaCompliantClient(Client):
         time.sleep(QUOTA_DELAY)
         return super().request(*args, **kwargs)
 
+    def copy_worksheet_to(self, worksheet, dest_filename):
+        """
+        Copy a tab from current spreadsheet file to the destination spreadsheet.
+
+        The copied tab title is assigned by Google Sheets automatically and returned
+        as a result of this method.
+
+        :param Worksheet worksheet: source tab
+        :param str dest_filename: filename of the destination spreadsheet
+        :return str: an assigned title of the copied tab in the destination spreadsheet.
+        :raise: WorksheetNotFound, SpreadsheetNotFound
+        """
+        source_file_id = worksheet.spreadsheet.id
+        source_sheet_id = worksheet.id
+        dest_spreadsheet = self.open(dest_filename)
+        dest_file_id = dest_spreadsheet.id
+
+        url = f"{SPREADSHEETS_API_V4_BASE_URL}/{source_file_id}/sheets/{source_sheet_id}:copyTo"
+        payload = {
+            "destinationSpreadsheetId": dest_file_id
+        }
+        response = self.request('post', url, json=payload)
+
+        new_title = json.loads(response.content)['title']
+        return new_title
+
     def get_all_notes(self, worksheet):
         """
         Get notes of all cells from a certain worksheet.
@@ -112,6 +138,7 @@ class QuotaCompliantClient(Client):
                     label = rowcol_to_a1(row=row, col=col)
                     result[label] = formatting.get('backgroundColor')
         return result
+
 
 def get_credentials():
     credentials = ServiceAccountCredentials.from_json_keyfile_name(

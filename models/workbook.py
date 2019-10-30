@@ -46,7 +46,7 @@ class Workbook(BaseSpreadsheet):
             if not one_by_one or (one_by_one and click.confirm(f"Move?", default=True)):
                 try:
                     new_title = self.spreadsheet.client.copy_worksheet_to(
-                        src_worksheet=worksheet, dest_filename=dest_filename
+                        worksheet=worksheet, dest_filename=dest_filename
                     )
                     self.spreadsheet.del_worksheet(worksheet)
                 except Exception as e:

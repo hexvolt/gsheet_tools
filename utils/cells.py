@@ -17,6 +17,8 @@ def a1_to_coords(label):
 
 
 def price_to_decimal(value, worksheet_title=None, label=None):
+    if ',' in value and '.' in value:
+        value = value.replace(',', '')
     try:
         return Decimal(value)
     except (TypeError, InvalidOperation):

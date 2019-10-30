@@ -366,10 +366,7 @@ class Receipt:
 
     @property
     def total(self):
-        try:
-            return self.price_stats[CellType.TOTAL]
-        except KeyError:
-            raise ValueError(f"There is no TOTAL price in {self.worksheet.title}")
+        return self.price_stats.get(CellType.TOTAL)
 
     @property
     def subtotal(self):

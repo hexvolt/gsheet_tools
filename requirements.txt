@@ -5,7 +5,7 @@ cached-property==1.5.1
 certifi==2019.9.11
 chardet==3.0.4
 Click==7.0
-gspread==3.1.0
+git+https://github.com/hexvolt/gspread.git@3.1.1#egg=gspread
 httplib2==0.14.0
 idna==2.8
 natsort==6.0.0

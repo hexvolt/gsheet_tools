@@ -45,7 +45,7 @@ def import_to_billing(source_filename, billing_filename, note_threshold, one_by_
 def clear_expenses(billing_filename, month):
     """Clear all expenses in the month billing spreadsheet."""
     billing_book = BillingBook(billing_filename)
-    month_billing = billing_book.get_month_billing(month=month)
+    month_billing = billing_book.get_month_billing(month=int(month))
     if click.confirm(
         f"This will delete all expenses from `{billing_filename}` month number {month}. Continue?",
         default=False,

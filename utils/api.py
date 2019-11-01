@@ -34,12 +34,10 @@ class QuotaCompliantClient(Client):
         dest_file_id = dest_spreadsheet.id
 
         url = f"{SPREADSHEETS_API_V4_BASE_URL}/{source_file_id}/sheets/{source_sheet_id}:copyTo"
-        payload = {
-            "destinationSpreadsheetId": dest_file_id
-        }
-        response = self.request('post', url, json=payload)
+        payload = {"destinationSpreadsheetId": dest_file_id}
+        response = self.request("post", url, json=payload)
 
-        new_title = json.loads(response.content)['title']
+        new_title = json.loads(response.content)["title"]
         return new_title
 
     def get_all_notes(self, worksheet):
@@ -136,7 +134,7 @@ class QuotaCompliantClient(Client):
                 formatting = cell_container.get("userEnteredFormat")
                 if formatting:
                     label = rowcol_to_a1(row=row, col=col)
-                    result[label] = formatting.get('backgroundColor')
+                    result[label] = formatting.get("backgroundColor")
         return result
 
 

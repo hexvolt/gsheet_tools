@@ -45,8 +45,7 @@ class Receipt:
         client = self.worksheet.spreadsheet.client
         cells_colors = client.get_all_colors(self.worksheet)
         result = {
-            label: Color(**color_props)
-            for label, color_props in cells_colors.items()
+            label: Color(**color_props) for label, color_props in cells_colors.items()
         }
         return result
 
@@ -71,12 +70,11 @@ class Receipt:
                 "Receipt must have normalized title with day number and "
                 "belong to a specific receipt book of name 'YYYY-MM'."
             )
-        else:
-            return date(
-                year=date_from_spreadsheet.year,
-                month=date_from_spreadsheet.month,
-                day=day_from_title,
-            )
+        return date(
+            year=date_from_spreadsheet.year,
+            month=date_from_spreadsheet.month,
+            day=day_from_title,
+        )
 
     @property
     def store(self):
@@ -409,7 +407,9 @@ class Receipt:
             return True
 
         tax = self.tax or 0
-        match_total = self.total == (self.subtotal or calculated_sum) + tax
+        match_total = (self.total or self.actually_paid) == (
+            self.subtotal or calculated_sum
+        ) + tax
         if raise_exception and not match_total:
             raise ValueError(
                 f"Subtotal {calculated_sum} + tax {tax} is not equal to total amount {self.total} "

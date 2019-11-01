@@ -104,9 +104,21 @@ class ReceiptBook(BaseSpreadsheet):
         comparison_attrs = []
         for receipt in self.receipts:
             click.echo(f"Reading receipt {receipt.worksheet.title}")
-            comparison_attrs.append(
-                (receipt.date, receipt.subtotal, receipt.total, receipt.actually_paid)
-            )
+            try:
+                comparison_attrs.append(
+                    (
+                        receipt.date,
+                        receipt.subtotal,
+                        receipt.total,
+                        receipt.actually_paid,
+                    )
+                )
+            except (ValueError, NotImplementedError) as e:
+                click.echo(
+                    RESULT_WARNING.format(
+                        f"Receipt {receipt.worksheet.title} has wrong data and skipped from analysis: {e}"
+                    )
+                )
 
         for attrs, count in Counter(comparison_attrs).items():
             if count > 1:

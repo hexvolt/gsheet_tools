@@ -389,7 +389,10 @@ class Receipt:
         biggest_non_grocery_type = max(Counter(non_grocery_types))
         result = biggest_non_grocery_type
 
-        if self.tax > (HST * self.get_category_price(biggest_non_grocery_type)):
+        if self.tax and self.tax > (HST * self.get_category_price(biggest_non_grocery_type)):
+            # if tax is more than 13% of biggest non-grocery category price,
+            # then it doesn't belong there, instead we assume it belongs to the most
+            # expensive category (not excluding Grocery)
             good_stats = {
                 good_type: self.get_category_price(good_type)
                 for good_type in self.purchases_by_type

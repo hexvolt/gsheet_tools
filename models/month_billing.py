@@ -98,7 +98,7 @@ class MonthBilling:
                     f"+{purchase.price}" if cell_formula else f"={purchase.price}"
                 )
 
-            is_tax_here = good_type == receipt.tax_belongs_to and receipt.tax
+            is_tax_here = receipt.tax and good_type == receipt.tax_belongs_to
             if is_tax_here:
                 cell_formula += f"+{receipt.tax}"
 

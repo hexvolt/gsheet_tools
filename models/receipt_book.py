@@ -101,7 +101,7 @@ class ReceiptBook(BaseSpreadsheet):
                 continue
 
             if receipt.discount:
-                click.echo(RESULT_OK.format(f"Receipt has a discount of {receipt.discount}."))
+                click.echo(RESULT_OK + f"Receipt has a discount/loyalty of {receipt.discount}.")
             else:
                 click.echo(RESULT_OK)
 

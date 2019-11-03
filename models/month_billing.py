@@ -117,8 +117,8 @@ class MonthBilling:
             category_price = receipt.get_category_price(good_type=good_type)
             added_price = category_price + (receipt.tax if is_tax_here else 0)
 
-            note = ", ".join(
-                purchase.good_name if purchase.price > 0 else f"Return: {purchase.good_name}"
+            note = "\n".join(
+                purchase.good_name if purchase.price > 0 else f"Return/Discount: {purchase.good_name}"
                 for purchase in purchases
                 if purchase.price > note_threshold or purchase.price < 0
             )

@@ -77,6 +77,13 @@ class MonthBilling:
                 f"to '{self.year}-{self.month} billing sheet."
             )
 
+        if receipt.tax_belongs_to is None:
+            click.echo(
+                RESULT_WARNING.format(
+                    f"Can't determine which category the tax belongs to in receipt '{receipt.worksheet.title}'"
+                )
+            )
+
         cells_to_update = []
         notes_to_add = {}
         for good_type, purchases in receipt.purchases_by_type.items():

@@ -3,6 +3,7 @@ from copy import copy
 from datetime import date
 from typing import List
 
+import click
 from cached_property import cached_property
 from dateutil.parser import parse
 from gspread import Cell
@@ -12,7 +13,7 @@ from natsort import natsorted
 from models.base import Color
 from models.purchase import Purchase
 from utils.cells import a1_to_coords, price_to_decimal, get_earliest_label
-from utils.constants import CellType, GOODS_TYPES, SUMMARY_TYPES, HST
+from utils.constants import CellType, GOODS_TYPES, SUMMARY_TYPES, HST, RESULT_WARNING
 from utils.names import extract_number
 
 
@@ -138,17 +139,18 @@ class Receipt:
         result = {}
 
         _, col = a1_to_rowcol(f"{self.NAME_COLUMN}1")
-        name_cells = [
-            Cell(row=row, col=col, value=line[col - 1])
-            for row, line in enumerate(self.content, 1)
-            if line[col - 1] and row > 1
-        ]
 
-        for cell in name_cells:
-            label = rowcol_to_a1(cell.row, cell.col)
+        for row, line in enumerate(self.content, 1):
+            if row == 1:
+                continue
+
+            value = line[col - 1]
+            label = rowcol_to_a1(row, col)
             cell_type = self.get_cell_type(label=label)
+            if (not cell_type or cell_type == CellType.REGULAR) and not value:
+                continue
 
-            result[label] = (cell.value, cell_type)
+            result[label] = (value, cell_type)
 
         result = dict(natsorted(result.items()))
         return result
@@ -216,7 +218,7 @@ class Receipt:
                 # regular prices. That's why we move on to the next cell right away.
                 continue
 
-            cell_type = self.get_cell_type(label=label)
+            cell_type = self.get_cell_type(label=label) or CellType.REGULAR
             result[label] = (amount, cell_type)
 
         result = dict(natsorted(result.items()))
@@ -261,7 +263,7 @@ class Receipt:
         return {
             label: price
             for label, (price, cell_type) in self._prices.items()
-            if cell_type == CellType.REGULAR
+            if cell_type == CellType.REGULAR or not cell_type
         }
 
     @cached_property
@@ -377,28 +379,29 @@ class Receipt:
     @cached_property
     def tax_belongs_to(self) -> CellType:
         """Returns the good type where the tax allegedly belongs."""
-        if len(self.purchases_by_type) == 1:
+        if len(self.purchases_by_type) == 1 or not self.tax:
             return list(self.purchases_by_type.keys())[0]
 
-        non_grocery_types = [
-            good_type
+        category_prices = {
+            good_type: sum(purchase.price for purchase in purchases)
             for good_type, purchases in self.purchases_by_type.items()
-            for _ in purchases
-            if good_type != CellType.GROCERY
-        ]
-        biggest_non_grocery_type = max(Counter(non_grocery_types))
-        result = biggest_non_grocery_type
+        }
+        sorted_category_prices = sorted(
+            category_prices.items(), key=lambda i: i[1], reverse=True
+        )
 
-        if self.tax and self.tax > (HST * self.get_category_price(biggest_non_grocery_type)):
-            # if tax is more than 13% of biggest non-grocery category price,
-            # then it doesn't belong there, instead we assume it belongs to the most
-            # expensive category (not excluding Grocery)
-            good_stats = {
-                good_type: self.get_category_price(good_type)
-                for good_type in self.purchases_by_type
-            }
-            most_expensive_type, _ = max(good_stats.items(), key=lambda o: o[1])
-            result = most_expensive_type
+        result, tax_commensurate = None, False
+        for good_type, total_price in sorted_category_prices:
+            tax_commensurate = self.tax <= (HST * total_price)
+
+            if tax_commensurate:
+                result = good_type
+
+            if good_type != CellType.GROCERY and tax_commensurate:
+                break
+
+        if sorted_category_prices and not result:
+            result = sorted_category_prices[0]
 
         return result
 
@@ -418,8 +421,6 @@ class Receipt:
                 f"Subtotal {calculated_sum} + tax {tax} is not equal to total amount {self.total} "
                 f"in tab '{self.worksheet.title}'"
             )
-        elif match_total:
-            return True
 
         if self.subtotal:
             match_subtotal = calculated_sum == self.subtotal

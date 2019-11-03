@@ -13,13 +13,18 @@ from utils.constants import RESULT_ERROR, RESULT_OK
 @click.option("--one-by-one", is_flag=True)
 def import_to_billing(source_filename, billing_filename, note_threshold, one_by_one):
     """
-    Import all receipts from the Receipt book into Billing book.
+    Import receipts from the Receipt book into Billing book.
 
     Since Receipt book contains all receipts from one month, this
     command basically populates month tab in the billing.
+
+    if source_filename contains a specific receipt names, e.g. `2017-11:10:21d`
+    then only 2 receipts 10 and 21d from 2017-11 will be imported.
     """
-    receipt_book = ReceiptBook(source_filename)
-    month = parse(source_filename).month
+    receipt_book_name, *receipt_titles = source_filename.split(':')
+
+    receipt_book = ReceiptBook(receipt_book_name)
+    month = parse(receipt_book_name).month
 
     billing_book = BillingBook(billing_filename)
     month_billing = billing_book.get_month_billing(month=month)
@@ -27,7 +32,12 @@ def import_to_billing(source_filename, billing_filename, note_threshold, one_by_
     if not click.confirm("Continue?"):
         return
 
-    for receipt in receipt_book.receipts:
+    if receipt_titles:
+        receipts_to_import = [receipt_book.get_receipt(title) for title in receipt_titles]
+    else:
+        receipts_to_import = receipt_book.receipts
+
+    for receipt in receipts_to_import:
         click.echo(f"Importing {receipt.worksheet.title}...")
 
         if not one_by_one or one_by_one and click.confirm(f"Rename?", default=True):

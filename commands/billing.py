@@ -21,7 +21,7 @@ def import_to_billing(source_filename, billing_filename, note_threshold, one_by_
     if source_filename contains a specific receipt names, e.g. `2017-11:10:21d`
     then only 2 receipts 10 and 21d from 2017-11 will be imported.
     """
-    receipt_book_name, *receipt_titles = source_filename.split(':')
+    receipt_book_name, *receipt_titles = source_filename.split(":")
 
     receipt_book = ReceiptBook(receipt_book_name)
     month = parse(receipt_book_name).month
@@ -33,7 +33,9 @@ def import_to_billing(source_filename, billing_filename, note_threshold, one_by_
         return
 
     if receipt_titles:
-        receipts_to_import = [receipt_book.get_receipt(title) for title in receipt_titles]
+        receipts_to_import = [
+            receipt_book.get_receipt(title) for title in receipt_titles
+        ]
     else:
         receipts_to_import = receipt_book.receipts
 

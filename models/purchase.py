@@ -16,4 +16,4 @@ class Purchase:
     good_type: CellType
     good_label: str
     price: Decimal
-    date: date
+    created: date

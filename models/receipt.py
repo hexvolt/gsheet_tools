@@ -330,7 +330,7 @@ class Receipt:
                 good_type=good_type,
                 good_label=good_label,
                 price=result_price,
-                date=self.date,
+                created=self.date,
             )
             result.append(purchase)
 

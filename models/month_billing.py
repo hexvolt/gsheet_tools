@@ -118,7 +118,9 @@ class MonthBilling:
             added_price = category_price + (receipt.tax if is_tax_here else 0)
 
             note = "\n".join(
-                purchase.good_name if purchase.price > 0 else f"Return/Discount: {purchase.good_name}"
+                purchase.good_name
+                if purchase.price > 0
+                else f"Return/Discount: {purchase.good_name}"
                 for purchase in purchases
                 if purchase.price > note_threshold or purchase.price < 0
             )
@@ -142,7 +144,7 @@ class MonthBilling:
         """Return the cell label in a month billing for a certain Purchase."""
         row = self.CATEGORY_ROWS[purchase.good_type]
         _, col = a1_to_rowcol(f"{self.FIRST_DAY_COLUMN}1")
-        col += purchase.date.day - 1
+        col += purchase.created.day - 1
         return rowcol_to_a1(row, col)
 
     def clear_expenses(self):

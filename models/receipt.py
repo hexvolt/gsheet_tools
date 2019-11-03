@@ -360,6 +360,16 @@ class Receipt:
         }
         return mapping.get(good_type)
 
+    @cached_property
+    def most_expensive_category(self) -> CellType:
+        category_prices = [
+            (good_type, sum(purchase.price for purchase in purchases))
+            for good_type, purchases in self.purchases_by_type.items()
+        ]
+        category_prices = sorted(category_prices, key=lambda t: t[1], reverse=True)
+        most_expensive_category, _ = category_prices[0]
+        return most_expensive_category
+
     @property
     def actually_paid(self):
         return self.price_stats.get(CellType.ACTUALLY_PAID)
@@ -375,6 +385,24 @@ class Receipt:
     @property
     def tax(self):
         return self.price_stats.get(CellType.TAX)
+
+    @property
+    def discount(self):
+        """
+        Return the difference between actually paid amound and total price of all purchases.
+
+        If there was some discount applied (and it wasn't specified in the goods), the
+        actually paid amount can be less than the sum of all purchases. In this case,
+        this property will return the positive number - amount of discoung.
+
+        In all other cases, it will be 0.
+        """
+        total = self.total or sum(p.price for p in self.purchases)
+        if self.actually_paid and self.actually_paid < total:
+            discount = abs(self.actually_paid - total)
+        else:
+            discount = 0
+        return discount
 
     @cached_property
     def tax_belongs_to(self) -> CellType:
@@ -422,7 +450,7 @@ class Receipt:
                 f"in tab '{self.worksheet.title}'"
             )
 
-        if self.subtotal:
+        if self.subtotal and calculated_sum:
             match_subtotal = calculated_sum == self.subtotal
             if raise_exception and not match_subtotal:
                 raise ValueError(

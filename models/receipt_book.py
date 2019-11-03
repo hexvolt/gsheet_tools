@@ -95,8 +95,13 @@ class ReceiptBook(BaseSpreadsheet):
                 receipt.prices_are_valid(raise_exception=True)
             except ValueError as e:
                 click.echo(RESULT_WARNING.format(e))
+                continue
             except Exception as e:
                 click.echo(RESULT_ERROR.format(e))
+                continue
+
+            if receipt.discount:
+                click.echo(RESULT_OK.format(f"Receipt has a discount of {receipt.discount}."))
             else:
                 click.echo(RESULT_OK)
 

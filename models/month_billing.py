@@ -109,15 +109,18 @@ class MonthBilling:
             if is_tax_here:
                 cell_formula += f"+{receipt.tax}"
 
+            if good_type == receipt.most_expensive_category:
+                cell_formula += f"-{receipt.discount}"
+
             cell.value = cell_formula
 
             category_price = receipt.get_category_price(good_type=good_type)
             added_price = category_price + (receipt.tax if is_tax_here else 0)
 
             note = ", ".join(
-                purchase.good_name
+                purchase.good_name if purchase.price > 0 else f"Return: {purchase.good_name}"
                 for purchase in purchases
-                if purchase.price > note_threshold
+                if purchase.price > note_threshold or purchase.price < 0
             )
             if note:
                 notes_to_add[destination_label] = note

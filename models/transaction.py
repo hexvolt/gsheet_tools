@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import date
 from decimal import Decimal
 from typing import List
@@ -6,8 +7,8 @@ import click
 from attr import dataclass
 from cached_property import cached_property
 from dateutil.parser import parse
-from gspread import Worksheet
-from gspread.utils import rowcol_to_a1
+from gspread import Worksheet, Cell
+from gspread.utils import rowcol_to_a1, a1_to_rowcol
 
 from models.base import BaseSpreadsheet
 from utils.constants import RESULT_WARNING
@@ -87,9 +88,8 @@ class TransactionHistory(BaseSpreadsheet):
             for worksheet_title, worksheet in self._tabs.items()
         }
 
-    @cached_property
-    def transactions(self):
-        """Return all Transactions collected from all worksheets in the file."""
+    def fetch_transactions(self):
+        """Read the transactions from transaction history spreadsheet into memory."""
         result = []
         for worksheet_title, row_containers in self.content.items():
             worksheet = self._tabs[worksheet_title]
@@ -108,3 +108,33 @@ class TransactionHistory(BaseSpreadsheet):
 
                 result.append(transaction)
         return result
+
+    @cached_property
+    def transactions(self):
+        """
+        Return all Transactions collected from all worksheets in the file.
+
+        Once created, Transactions objects are mutable, so their `has_receipt`
+        flag can be edited after for posting everything back into the spreadsheet.
+
+        Unlike fetch_transactions(), this method is cached and populated only once.
+        """
+        return self.fetch_transactions()
+
+    def post_to_spreadsheet(self):
+        """Update spreadsheet with current transaction's has_receipt values."""
+        worksheet_transactions = defaultdict(list)
+        for transaction in self.transactions:
+            worksheet_transactions[transaction.worksheet].append(transaction)
+
+        for worksheet, transactions in worksheet_transactions.items():
+            cell_list = [
+                Cell(*a1_to_rowcol(transaction.label), 'Y' if transaction.has_receipt else '')
+                for transaction in transactions
+            ]
+            worksheet.update_cells(cell_list=cell_list)
+
+    def reset_flags(self):
+        """Reset has_receipt flag value to False for all transactions in memory."""
+        for transaction in self.transactions:
+            transaction.has_receipt = False

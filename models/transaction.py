@@ -1,6 +1,6 @@
 import math
 from collections import defaultdict
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 from typing import List, Dict
 
@@ -37,7 +37,7 @@ class Transaction:
                     kwargs.update(has_receipt=bool(cell_value))
 
                 elif label.startswith(TransactionHistory.DATE_COLUMN):
-                    kwargs.update(created=parse(cell_value))
+                    kwargs.update(created=parse(cell_value).date())
 
                 elif label.startswith(TransactionHistory.TITLE_COLUMN):
                     kwargs.update(title=cell_value)
@@ -69,6 +69,7 @@ class TransactionHistory(BaseSpreadsheet):
     TIME_COLUMN = "F"
 
     price_match_threshold = Decimal(0.03)
+    day_match_threshold = 2
 
     @cached_property
     def _tabs(self):
@@ -125,7 +126,7 @@ class TransactionHistory(BaseSpreadsheet):
         return self.fetch_transactions()
 
     @cached_property
-    def _transactions_by_date(self) -> Dict[date:Transaction]:
+    def _transactions_by_date(self) -> Dict[date, list]:
         result = defaultdict(list)
         for transaction in self.transactions:
             result[transaction.created].append(transaction)
@@ -135,25 +136,47 @@ class TransactionHistory(BaseSpreadsheet):
         """
         Looks up the transaction for a certain day and price and certain has_receipt state.
 
-        If the exact match by price is not found, the closes matches are logged and
-        None is returned.
+        If the exact match is not found on specified day, the closes days are
+        checked because sometimes banks post transaction to the history on the next
+        day or few. If the transaction with *exact* amount is found on next day,
+        then it is returned.
+
+        If the exact match by price is not found not on specified day, nor the next one,
+        then the closest matches are logged and None is returned.
 
         :rtype: Transaction or None
         """
-        transactions_per_day = self._transactions_by_date[created]
+        transactions_this_day = self._transactions_by_date[created]
 
-        close_matches = []
-        for transaction in transactions_per_day:
-            if not transaction.has_receipt == has_receipt:
-                continue
+        transactions_next_days = []
+        for day in range(self.day_match_threshold):
+            transactions_next_days.extend(
+                self._transactions_by_date[created + timedelta(days=day + 1)]
+            )
 
-            difference = abs(transaction.price - price)
+        transactions = [
+            transaction
+            for transaction in transactions_this_day + transactions_next_days
+            if transaction.has_receipt == has_receipt
+        ]
 
+        # lookup the exact price match
+        for transaction in transactions:
             if math.isclose(transaction.price, price):
+                if transaction.date > created:
+                    click.echo(f"Found on the day {transaction.date}")
                 return transaction
 
-            elif difference <= self.price_match_threshold:
+        # lookup close matches
+        close_matches = []
+        for transaction in transactions:
+            difference = abs(transaction.price - price)
+
+            if difference <= self.price_match_threshold:
                 close_matches.append((transaction, difference))
+
+        if not close_matches:
+            return None
 
         min_diff = min(diff for _, diff in close_matches)
         close_matches = [

@@ -125,7 +125,7 @@ class TransactionHistory(BaseSpreadsheet):
         return self.fetch_transactions()
 
     @cached_property
-    def _transactions_by_date(self) -> Dict[date: Transaction]:
+    def _transactions_by_date(self) -> Dict[date:Transaction]:
         result = defaultdict(list)
         for transaction in self.transactions:
             result[transaction.created].append(transaction)
@@ -156,12 +156,16 @@ class TransactionHistory(BaseSpreadsheet):
                 close_matches.append((transaction, difference))
 
         min_diff = min(diff for _, diff in close_matches)
-        close_matches = [transaction for transaction, diff in close_matches if diff == min_diff]
+        close_matches = [
+            transaction for transaction, diff in close_matches if diff == min_diff
+        ]
         if close_matches:
-            close_matches = '\n'.join(close_matches)
-            click.echo(RESULT_WARNING.format(
-                f"Exact transaction for ({created}, {price}) was not found "
-                f"but there are close matches: {close_matches}")
+            close_matches = "\n".join(close_matches)
+            click.echo(
+                RESULT_WARNING.format(
+                    f"Exact transaction for ({created}, {price}) was not found "
+                    f"but there are close matches: {close_matches}"
+                )
             )
 
         return None
@@ -174,7 +178,10 @@ class TransactionHistory(BaseSpreadsheet):
 
         for worksheet, transactions in worksheet_transactions.items():
             cell_list = [
-                Cell(*a1_to_rowcol(transaction.label), 'Y' if transaction.has_receipt else '')
+                Cell(
+                    *a1_to_rowcol(transaction.label),
+                    "Y" if transaction.has_receipt else "",
+                )
                 for transaction in transactions
             ]
             worksheet.update_cells(cell_list=cell_list)

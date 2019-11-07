@@ -34,7 +34,7 @@ def mark_transactions(source_filenames, transactions_filename, overwrite):
             transactions = history.find_transactions(
                 created=receipt.date,
                 price=receipt.actually_paid or receipt.total or receipt.subtotal,
-                has_receipt=None if overwrite else False
+                has_receipt=None if overwrite else False,
             )
             if transactions:
                 click.echo(RESULT_OK + "Found.")
@@ -49,7 +49,9 @@ def mark_transactions(source_filenames, transactions_filename, overwrite):
 
         click.echo("Receipts not found in transactions history:")
         for receipt in not_found_receipts:
-            click.echo(f"{receipt.worksheet.spreadsheet.title}:{receipt.worksheet.title}")
+            click.echo(
+                f"{receipt.worksheet.spreadsheet.title}:{receipt.worksheet.title}"
+            )
 
 
 @click.command()
@@ -58,8 +60,8 @@ def reset_transactions(transactions_filename):
     """Reset the has_receipt flag of all transactions in spreadsheet."""
     history = TransactionHistory(filename=transactions_filename)
     if click.confirm(
-            f"This will reset the has_receipt flag of all transactions in the file `{transactions_filename}`. Continue?",
-            default=False,
+        f"This will reset the has_receipt flag of all transactions in the file `{transactions_filename}`. Continue?",
+        default=False,
     ):
         history.reset_flags()
         history.post_to_spreadsheet()

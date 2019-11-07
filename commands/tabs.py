@@ -80,10 +80,17 @@ def validate(filenames):
         )
         total += len(receipt_book.receipts)
 
-    click.echo("\n" + RESULT_OK + f"{total} receipts analyzed. {len(suspicious_receipts)} suspicious found:\n")
+    click.echo(
+        "\n"
+        + RESULT_OK
+        + f"{total} receipts analyzed. {len(suspicious_receipts)} suspicious found:\n"
+    )
 
     for receipt in suspicious_receipts:
-        click.echo(f"{receipt.worksheet.spreadsheet.title} : {receipt.worksheet.title} ==> ", nl=False)
+        click.echo(
+            f"{receipt.worksheet.spreadsheet.title} : {receipt.worksheet.title} ==> ",
+            nl=False,
+        )
         try:
             receipt.prices_are_valid(raise_exception=True)
         except ValueError as e:
@@ -95,7 +102,6 @@ def validate(filenames):
             click.echo(
                 RESULT_OK + f"Receipt has a discount/loyalty of {receipt.discount}."
             )
-
 
 
 @click.command()

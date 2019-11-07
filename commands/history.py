@@ -8,7 +8,8 @@ from utils.constants import RESULT_OK
 @click.command()
 @click.argument("source_filenames", nargs=-1)
 @click.argument("transactions_filename")
-def mark_transactions(source_filenames, transactions_filename):
+@click.option("--overwrite", is_flag=True)
+def mark_transactions(source_filenames, transactions_filename, overwrite):
     """
     Read the receipts from source_filenames and mark an appropriate
     transaction in transactions_filename with a check-mark that it
@@ -28,17 +29,30 @@ def mark_transactions(source_filenames, transactions_filename):
 
         for receipt in receipt_book.receipts:
             click.echo(f"{receipt.worksheet.title} ==> ", nl=False)
-            transaction = history.find_transaction(
+            transactions = history.find_transactions(
                 created=receipt.date,
                 price=receipt.actually_paid or receipt.total or receipt.subtotal,
-                has_receipt=False,
+                has_receipt=None if overwrite else False
             )
-            if transaction:
+            if transactions:
                 click.echo(RESULT_OK + "Found.")
-                transaction.has_receipt = True
+                transactions[0].has_receipt = True
             else:
                 click.echo("Not found.")
 
         click.echo("Updating the history spreadsheet...")
         history.post_to_spreadsheet()
         click.echo(RESULT_OK)
+
+
+@click.command()
+@click.argument("transactions_filename")
+def reset_transactions(transactions_filename):
+    """Reset the has_receipt flag of all transactions in spreadsheet."""
+    history = TransactionHistory(filename=transactions_filename)
+    if click.confirm(
+            f"This will reset the has_receipt flag of all transactions in the file `{transactions_filename}`. Continue?",
+            default=False,
+    ):
+        history.reset_flags()
+        history.post_to_spreadsheet()

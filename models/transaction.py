@@ -132,11 +132,11 @@ class TransactionHistory(BaseSpreadsheet):
             result[transaction.created].append(transaction)
         return result
 
-    def find_transaction(self, created, price, has_receipt):
+    def find_transactions(self, created, price, has_receipt):
         """
         Looks up the transaction for a certain day and price and certain has_receipt state.
 
-        If the exact match is not found on specified day, the closes days are
+        If the exact matches are not found on specified day, the closest days are
         checked because sometimes banks post transaction to the history on the next
         day or few. If the transaction with *exact* amount is found on next day,
         then it is returned.
@@ -144,7 +144,7 @@ class TransactionHistory(BaseSpreadsheet):
         If the exact match by price is not found not on specified day, nor the next one,
         then the closest matches are logged and None is returned.
 
-        :rtype: Transaction or None
+        :rtype: list or None
         """
         transactions_this_day = self._transactions_by_date[created]
 
@@ -154,20 +154,24 @@ class TransactionHistory(BaseSpreadsheet):
                 self._transactions_by_date[created + timedelta(days=day + 1)]
             )
 
-        transactions = [
-            transaction
-            for transaction in transactions_this_day + transactions_next_days
-            if transaction.has_receipt == has_receipt
-        ]
+        transactions = transactions_this_day + transactions_next_days
+        if has_receipt is not None:
+            transactions = [
+                transaction
+                for transaction in transactions
+                if transaction.has_receipt == has_receipt
+            ]
 
-        # lookup the exact price match
+        exact_matches = []
         for transaction in transactions:
             if math.isclose(transaction.price, price):
-                if transaction.date > created:
-                    click.echo(f"Found on the day {transaction.date}")
-                return transaction
+                if transaction.created > created:
+                    click.echo(f"Found on the day {transaction.created}")
+                exact_matches.append(transaction)
 
-        # lookup close matches
+        if exact_matches:
+            return exact_matches
+
         close_matches = []
         for transaction in transactions:
             difference = abs(transaction.price - price)
@@ -183,11 +187,11 @@ class TransactionHistory(BaseSpreadsheet):
             transaction for transaction, diff in close_matches if diff == min_diff
         ]
         if close_matches:
-            close_matches = "\n".join(close_matches)
+            msg = "\n".join(str(t) for t in close_matches)
             click.echo(
                 RESULT_WARNING.format(
                     f"Exact transaction for ({created}, {price}) was not found "
-                    f"but there are close matches: {close_matches}"
+                    f"but there are close matches: {msg}"
                 )
             )
 

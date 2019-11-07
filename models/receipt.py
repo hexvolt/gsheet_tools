@@ -242,7 +242,7 @@ class Receipt:
         """
         result = {}
         for label, (price, cell_type) in self._prices.items():
-            if cell_type in result:
+            if cell_type in result and cell_type != CellType.ACTUALLY_PAID:
                 result[cell_type] += price
             else:
                 result[cell_type] = price

@@ -1,4 +1,5 @@
 import click
+from gspread import SpreadsheetNotFound
 
 from models.receipt_book import ReceiptBook
 from models.workbook import Workbook
@@ -71,7 +72,12 @@ def validate(filenames):
     suspicious_receipts = []
     total = 0
     for filename in filenames:
-        receipt_book = ReceiptBook(filename)
+        try:
+            receipt_book = ReceiptBook(filename)
+        except SpreadsheetNotFound:
+            click.echo(RESULT_ERROR.format(f"'{filename}' not found. Check the name or permissions."))
+            continue
+
         click.echo(f"Validating prices in '{filename}'...")
         suspicious_receipts.extend(
             receipt

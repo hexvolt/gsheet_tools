@@ -1,7 +1,8 @@
+import math
 from collections import defaultdict
 from datetime import date
 from decimal import Decimal
-from typing import List
+from typing import List, Dict
 
 import click
 from attr import dataclass
@@ -67,6 +68,8 @@ class TransactionHistory(BaseSpreadsheet):
     PAYMENT_COLUMN = "E"
     TIME_COLUMN = "F"
 
+    price_match_threshold = Decimal(0.03)
+
     @cached_property
     def _tabs(self):
         return {
@@ -110,7 +113,7 @@ class TransactionHistory(BaseSpreadsheet):
         return result
 
     @cached_property
-    def transactions(self):
+    def transactions(self) -> List[Transaction]:
         """
         Return all Transactions collected from all worksheets in the file.
 
@@ -120,6 +123,48 @@ class TransactionHistory(BaseSpreadsheet):
         Unlike fetch_transactions(), this method is cached and populated only once.
         """
         return self.fetch_transactions()
+
+    @cached_property
+    def _transactions_by_date(self) -> Dict[date: Transaction]:
+        result = defaultdict(list)
+        for transaction in self.transactions:
+            result[transaction.created].append(transaction)
+        return result
+
+    def find_transaction(self, created, price, has_receipt):
+        """
+        Looks up the transaction for a certain day and price and certain has_receipt state.
+
+        If the exact match by price is not found, the closes matches are logged and
+        None is returned.
+
+        :rtype: Transaction or None
+        """
+        transactions_per_day = self._transactions_by_date[created]
+
+        close_matches = []
+        for transaction in transactions_per_day:
+            if not transaction.has_receipt == has_receipt:
+                continue
+
+            difference = abs(transaction.price - price)
+
+            if math.isclose(transaction.price, price):
+                return transaction
+
+            elif difference <= self.price_match_threshold:
+                close_matches.append((transaction, difference))
+
+        min_diff = min(diff for _, diff in close_matches)
+        close_matches = [transaction for transaction, diff in close_matches if diff == min_diff]
+        if close_matches:
+            close_matches = '\n'.join(close_matches)
+            click.echo(RESULT_WARNING.format(
+                f"Exact transaction for ({created}, {price}) was not found "
+                f"but there are close matches: {close_matches}")
+            )
+
+        return None
 
     def post_to_spreadsheet(self):
         """Update spreadsheet with current transaction's has_receipt values."""

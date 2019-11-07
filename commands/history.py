@@ -18,6 +18,8 @@ def mark_transactions(source_filenames, transactions_filename, overwrite):
     :param source_filenames: names of month Receipt book files (2017-11 ...)
     :param transactions_filename: a name of the file with transactions
     """
+    not_found_receipts = []
+
     click.echo(f"Reading the transactions history from '{transactions_filename}'")
     history = TransactionHistory(filename=transactions_filename)
     if history.transactions:
@@ -39,10 +41,15 @@ def mark_transactions(source_filenames, transactions_filename, overwrite):
                 transactions[0].has_receipt = True
             else:
                 click.echo("Not found.")
+                not_found_receipts.append(receipt)
 
         click.echo("Updating the history spreadsheet...")
         history.post_to_spreadsheet()
         click.echo(RESULT_OK)
+
+        click.echo("Receipts not found in transactions history:")
+        for receipt in not_found_receipts:
+            click.echo(f"{receipt.worksheet.spreadsheet.title}:{receipt.worksheet.title}")
 
 
 @click.command()

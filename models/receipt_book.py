@@ -88,10 +88,9 @@ class ReceiptBook(BaseSpreadsheet):
 
     def validate(self):
         """Check if the prices in each tab add up correctly."""
-        for worksheet in self.spreadsheet.worksheets():
-            click.echo(f"{worksheet.title} ==> ", nl=False)
+        for receipt in self.receipts:
+            click.echo(f"{receipt.worksheet.title} ==> ", nl=False)
             try:
-                receipt = Receipt(worksheet)
                 receipt.prices_are_valid(raise_exception=True)
             except ValueError as e:
                 click.echo(RESULT_WARNING.format(e))

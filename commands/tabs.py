@@ -2,6 +2,7 @@ import click
 
 from models.receipt_book import ReceiptBook
 from models.workbook import Workbook
+from utils.constants import RESULT_WARNING, RESULT_ERROR, RESULT_OK
 
 
 @click.command()
@@ -59,16 +60,42 @@ def reorder(filename):
 
 
 @click.command()
-@click.argument("filename")
-def validate(filename):
+@click.argument("filenames", nargs=-1)
+def validate(filenames):
     """
-    Validate prices in all tabs.
+    Validate prices in all tabs of specified files.
 
-    If numbers don't add up there - show the warning.
+    If numbers don't add up there - shows the warning.
+    Shows the summary with issues across all files at the end.
     """
-    receipt_book = ReceiptBook(filename)
-    click.echo("Validating prices in all tabs...")
-    receipt_book.validate()
+    suspicious_receipts = []
+    total = 0
+    for filename in filenames:
+        receipt_book = ReceiptBook(filename)
+        click.echo(f"Validating prices in '{filename}'...")
+        suspicious_receipts.extend(
+            receipt
+            for receipt in receipt_book.receipts
+            if not receipt.prices_are_valid(raise_exception=False) or receipt.discount
+        )
+        total += len(receipt_book.receipts)
+
+    click.echo("\n" + RESULT_OK + f"{total} receipts analyzed. {len(suspicious_receipts)} suspicious found:\n")
+
+    for receipt in suspicious_receipts:
+        click.echo(f"{receipt.worksheet.spreadsheet.title} : {receipt.worksheet.title} ==> ", nl=False)
+        try:
+            receipt.prices_are_valid(raise_exception=True)
+        except ValueError as e:
+            click.echo(RESULT_WARNING.format(e))
+        except Exception as e:
+            click.echo(RESULT_ERROR.format(e))
+
+        if receipt.discount:
+            click.echo(
+                RESULT_OK + f"Receipt has a discount/loyalty of {receipt.discount}."
+            )
+
 
 
 @click.command()

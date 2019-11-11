@@ -99,15 +99,14 @@ def validate(filenames):
         )
         try:
             receipt.prices_are_valid(raise_exception=True)
+            if receipt.discount:
+                click.echo(
+                    RESULT_OK + f"Receipt has a discount/loyalty of {receipt.discount}."
+                )
         except ValueError as e:
             click.echo(RESULT_WARNING.format(e))
         except Exception as e:
             click.echo(RESULT_ERROR.format(e))
-
-        if receipt.discount:
-            click.echo(
-                RESULT_OK + f"Receipt has a discount/loyalty of {receipt.discount}."
-            )
 
 
 @click.command()

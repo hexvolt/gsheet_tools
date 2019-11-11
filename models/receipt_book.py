@@ -92,6 +92,7 @@ class ReceiptBook(BaseSpreadsheet):
             click.echo(f"{receipt.worksheet.title} ==> ", nl=False)
             try:
                 receipt.prices_are_valid(raise_exception=True)
+                discount = receipt.discount
             except ValueError as e:
                 click.echo(RESULT_WARNING.format(e))
                 continue
@@ -99,7 +100,7 @@ class ReceiptBook(BaseSpreadsheet):
                 click.echo(RESULT_ERROR.format(e))
                 continue
 
-            if receipt.discount:
+            if discount:
                 click.echo(
                     RESULT_OK + f"Receipt has a discount/loyalty of {receipt.discount}."
                 )

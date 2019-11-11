@@ -1,3 +1,4 @@
+import math
 from collections import defaultdict, Counter
 from copy import copy
 from datetime import date
@@ -435,23 +436,27 @@ class Receipt:
 
     def prices_are_valid(self, raise_exception=True):
         """Return True if all prices adds up correctly to subtotal and total numbers."""
+        if not self._prices:
+            if raise_exception:
+                raise ValueError(f"There is no prices in {self.worksheet.title}.")
+            else:
+                return False
+
         calculated_sum = self.price_stats.get(CellType.REGULAR, 0)
         if not self.subtotal and not calculated_sum:
             # some receipts has just one total price
             return True
 
         tax = self.tax or 0
-        match_total = (self.total or self.actually_paid) == (
-            self.subtotal or calculated_sum
-        ) + tax
+        match_total = math.isclose((self.total or self.actually_paid), (self.subtotal or calculated_sum) + tax)
         if raise_exception and not match_total:
             raise ValueError(
-                f"Subtotal {calculated_sum} + tax {tax} is not equal to total amount {self.total} "
-                f"in tab '{self.worksheet.title}'"
+                f"Subtotal {self.subtotal or calculated_sum} + tax {tax} is not equal to amount "
+                f"{self.total or self.actually_paid} in tab '{self.worksheet.title}'"
             )
 
         if self.subtotal and calculated_sum:
-            match_subtotal = calculated_sum == self.subtotal
+            match_subtotal = math.isclose(calculated_sum, self.subtotal)
             if raise_exception and not match_subtotal:
                 raise ValueError(
                     f"Sum of prices {calculated_sum} is not equal to subtotal amount {self.subtotal} "

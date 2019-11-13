@@ -29,7 +29,7 @@ def import_to_billing(source_filename, billing_filename, note_threshold, one_by_
     billing_book = BillingBook(billing_filename)
     month_billing = billing_book.get_month_billing(month=month)
 
-    if not click.confirm("Continue?"):
+    if not click.confirm("Continue?", default=True):
         return
 
     if receipt_titles:

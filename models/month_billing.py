@@ -109,7 +109,7 @@ class MonthBilling:
             if is_tax_here:
                 cell_formula += f"+{receipt.tax}"
 
-            if good_type == receipt.most_expensive_category:
+            if receipt.discount and good_type == receipt.most_expensive_category:
                 cell_formula += f"-{receipt.discount}"
 
             cell.value = cell_formula
@@ -125,7 +125,7 @@ class MonthBilling:
                 if purchase.price > note_threshold or purchase.price < 0
             )
             if note:
-                notes_to_add[destination_label] = note
+                notes_to_add[destination_label] = f"{receipt.store}: \n {note}"
 
             if cell_price_before and math.isclose(cell_price_before % added_price, 0):
                 click.echo(

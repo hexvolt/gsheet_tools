@@ -351,6 +351,10 @@ class Receipt:
         result = defaultdict(list)
         for purchase in self.purchases:
             result[purchase.good_type].append(purchase)
+
+        if not result:
+            raise ValueError(f"No categorized purchases found in receipt {self.worksheet.title}. "
+                             f"Probably nothing is marked.")
         return result
 
     def get_category_price(self, good_type):

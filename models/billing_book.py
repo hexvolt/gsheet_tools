@@ -5,6 +5,7 @@ from dateutil.parser import parse
 from models.base import BaseSpreadsheet
 from models.month_billing import MonthBilling
 from utils.constants import RESULT_WARNING
+from utils.names import extract_number
 
 
 class BillingBook(BaseSpreadsheet):
@@ -37,3 +38,13 @@ class BillingBook(BaseSpreadsheet):
 
     def get_month_billing(self, month: int) -> MonthBilling:
         return self._month_billings_map.get(month)
+
+    @property
+    def year(self):
+        """Return the year of a Billing Book parsed from the title."""
+        try:
+            return extract_number(self.spreadsheet.title)
+        except (ValueError, TypeError):
+            raise ValueError(
+                f"Can't find year in billing's title: {self.spreadsheet.title}"
+            )

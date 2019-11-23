@@ -83,7 +83,11 @@ def transactions_to_billing(
 
             click.echo(f"Importing {transaction}...")
 
-            if not one_by_one or one_by_one and click.confirm(f"Continue?", default=True):
+            if (
+                not one_by_one
+                or one_by_one
+                and click.confirm(f"Continue?", default=True)
+            ):
                 result_msg = RESULT_OK
                 month_billing = billing_book.get_month_billing(
                     month=transaction.created.month
@@ -99,7 +103,9 @@ def transactions_to_billing(
                     preferred_type = choices[selected_index]
 
                 elif len(transaction.matching_types) < 1:
-                    available_types = {i: cell_type for i, cell_type in enumerate(CellType)}
+                    available_types = {
+                        i: cell_type for i, cell_type in enumerate(CellType)
+                    }
                     choices = "\n".join(
                         f"{i} - {cell_type.name}"
                         for i, cell_type in available_types.items()

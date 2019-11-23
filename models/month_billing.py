@@ -68,7 +68,9 @@ class MonthBilling:
         except ValueError:
             raise ValueError("Billing book must have a year in the title.")
 
-    def import_transaction(self, transaction: Transaction, note_threshold=50, preferred_type=None):
+    def import_transaction(
+        self, transaction: Transaction, note_threshold=50, preferred_type=None
+    ):
         """
         Adds the data from the transaction to the month billing spreadsheet.
 
@@ -78,9 +80,13 @@ class MonthBilling:
         good_type = preferred_type or transaction.good_type
 
         if not good_type:
-            raise ValueError("The good type of the transaction is unknown. Can't import.")
+            raise ValueError(
+                "The good type of the transaction is unknown. Can't import."
+            )
 
-        destination_label = self.get_destination_label(created=transaction.created, good_type=good_type)
+        destination_label = self.get_destination_label(
+            created=transaction.created, good_type=good_type
+        )
         cell = self.worksheet.acell(destination_label, value_render_option="FORMULA")
         cell.value += f"+{transaction.price}" if cell.value else f"={transaction.price}"
 
@@ -129,7 +135,9 @@ class MonthBilling:
             if not purchases:
                 continue
 
-            destination_label = self.get_destination_label(created=purchases[0].created, good_type=purchases[0].good_type)
+            destination_label = self.get_destination_label(
+                created=purchases[0].created, good_type=purchases[0].good_type
+            )
             cell = self.worksheet.acell(
                 destination_label, value_render_option="FORMULA"
             )

@@ -98,9 +98,12 @@ def transactions_to_billing(
                         f"{i} - {cell_type.name}"
                         for i, cell_type in enumerate(transaction.matching_types)
                     )
-                    msg = f"Transaction {transaction} can be one of: \n{choices}\n"
-                    selected_index = int(click.prompt(text=msg, show_choices=True))
-                    preferred_type = choices[selected_index]
+                    msg = f"Transaction {transaction} can be one of: \n{choices}\n. Nothing to skip."
+                    selected_index = click.prompt(text=msg, default="", show_choices=True)
+                    if not selected_index.strip():
+                        click.echo("Skipped.")
+                        continue
+                    preferred_type = choices[int(selected_index)]
 
                 elif len(transaction.matching_types) < 1:
                     available_types = {
@@ -110,9 +113,12 @@ def transactions_to_billing(
                         f"{i} - {cell_type.name}"
                         for i, cell_type in available_types.items()
                     )
-                    msg = f"Can't determine good type for {transaction}. Choose one of: \n{choices}\n"
-                    selected_index = int(click.prompt(text=msg, show_choices=True))
-                    preferred_type = available_types[selected_index]
+                    msg = f"Can't determine good type for {transaction}. Choose one of: \n{choices}\n. Nothing to skip."
+                    selected_index = click.prompt(text=msg, default="", show_choices=True)
+                    if not selected_index.strip():
+                        click.echo("Skipped.")
+                        continue
+                    preferred_type = available_types[int(selected_index)]
 
                 else:
                     preferred_type = transaction.good_type

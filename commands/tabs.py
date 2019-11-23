@@ -75,7 +75,11 @@ def validate(filenames):
         try:
             receipt_book = ReceiptBook(filename)
         except SpreadsheetNotFound:
-            click.echo(RESULT_ERROR.format(f"'{filename}' not found. Check the name or permissions."))
+            click.echo(
+                RESULT_ERROR.format(
+                    f"'{filename}' not found. Check the name or permissions."
+                )
+            )
             continue
 
         click.echo(f"Validating prices in '{filename}'...")

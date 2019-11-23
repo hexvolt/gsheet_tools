@@ -32,6 +32,9 @@ class CellType(Enum):
 
     # The roof over your head
     HOUSEKEEPING = Color(red=0.91764706, green=0.81960785, blue=0.8627451)
+    GAS_ELECTRIC = Color(red=2, green=2, blue=2)
+    PHONES = Color(red=3, green=3, blue=3)
+    TV_INTERNET = Color(red=4, green=4, blue=4)
     FURNITURE_APPLIANCES = Color(red=0.8352941, green=0.6509804, blue=0.7411765)
 
     # Style and personal care
@@ -44,12 +47,14 @@ class CellType(Enum):
     BOOKS = Color(red=0.30588236, green=0.7019608, blue=0.3529412)
     GIFTS = Color(red=0.5529412, green=0.9372549, blue=0.85490197)
     HOBBIES = Color(red=0.49019608, green=0.83137256, blue=0.7607843)
+    SUBSCRIPTIONS = Color(red=5, green=5, blue=5)
     OTHER_FUN = Color(red=0.41960785, green=0.7137255, blue=0.6509804)
 
     # Getting around
     GASOLINE = Color(red=0.7764706, green=0.6745098, blue=1)
     PARKING = Color(red=0.5568628, green=0.4862745, blue=0.7647059)
     FARES = Color(red=0.85882354, green=0.6431373, blue=0.9843137)
+    CAR_RENT = Color(red=6, green=6, blue=6)
 
     # Health care
     DRUGS = Color(red=0.6431373, green=0.7607843, blue=0.95686275)
@@ -57,6 +62,7 @@ class CellType(Enum):
 
     # Other
     OTHER = Color(red=0.7176471, green=0.7176471, blue=0.7176471)
+    CHARITY = Color(red=6, green=6, blue=6)
 
 
 SUMMARY_TYPES = (

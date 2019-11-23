@@ -1,4 +1,5 @@
 import math
+from datetime import date
 from decimal import Decimal
 
 import click
@@ -8,6 +9,7 @@ from gspread import Cell
 from gspread.utils import a1_to_rowcol, rowcol_to_a1
 
 from models.receipt import Receipt
+from models.transaction import Transaction
 from utils.constants import CellType, RESULT_WARNING
 from utils.names import extract_number
 
@@ -21,21 +23,28 @@ class MonthBilling:
     CATEGORY_ROWS = {
         CellType.GROCERY: 14,
         CellType.TAKEOUTS: 15,
+        CellType.GAS_ELECTRIC: 20,
+        CellType.PHONES: 22,
+        CellType.TV_INTERNET: 23,
         CellType.HOUSEKEEPING: 24,
         CellType.FURNITURE_APPLIANCES: 25,
         CellType.CLOTHING: 28,
+        CellType.HAIRCUTS: 29,
         CellType.GYM: 32,
         CellType.ENTERTAINMENT: 36,
         CellType.TRAVEL: 37,
         CellType.BOOKS: 38,
         CellType.GIFTS: 39,
         CellType.HOBBIES: 40,
+        CellType.SUBSCRIPTIONS: 41,
         CellType.OTHER_FUN: 43,
         CellType.GASOLINE: 45,
+        CellType.CAR_RENT: 47,
         CellType.PARKING: 48,
         CellType.FARES: 49,
         CellType.DRUGS: 52,
         CellType.DENTAL_VISION: 53,
+        CellType.CHARITY: 87,
         CellType.OTHER: 88,
     }
 
@@ -58,6 +67,36 @@ class MonthBilling:
             return parse(str(year_string)).year
         except ValueError:
             raise ValueError("Billing book must have a year in the title.")
+
+    def import_transaction(self, transaction: Transaction, note_threshold=50, preferred_type=None):
+        """
+        Adds the data from the transaction to the month billing spreadsheet.
+
+        If a price in transaction exceeds threshold, it's name will be included
+        into a note for a cell.
+        """
+        good_type = preferred_type or transaction.good_type
+
+        if not good_type:
+            raise ValueError("The good type of the transaction is unknown. Can't import.")
+
+        destination_label = self.get_destination_label(created=transaction.created, good_type=good_type)
+        cell = self.worksheet.acell(destination_label, value_render_option="FORMULA")
+        cell.value += f"+{transaction.price}" if cell.value else f"={transaction.price}"
+
+        is_note_needed = transaction.price > note_threshold or transaction.price < 0
+        if is_note_needed:
+            note = "\n".join(
+                transaction.title
+                if transaction.price > 0
+                else f"Return/Discount: {transaction.title}"
+            )
+            self.worksheet.spreadsheet.client.insert_notes(
+                worksheet=self.worksheet,
+                labels_notes={destination_label: note},
+                replace=False,
+            )
+        self.worksheet.update_cells([cell], value_input_option="USER_ENTERED")
 
     def import_receipt(self, receipt: Receipt, note_threshold=50):
         """
@@ -90,7 +129,7 @@ class MonthBilling:
             if not purchases:
                 continue
 
-            destination_label = self.get_destination_label(purchase=purchases[0])
+            destination_label = self.get_destination_label(created=purchases[0].created, good_type=purchases[0].good_type)
             cell = self.worksheet.acell(
                 destination_label, value_render_option="FORMULA"
             )
@@ -140,11 +179,11 @@ class MonthBilling:
             )
         self.worksheet.update_cells(cells_to_update, value_input_option="USER_ENTERED")
 
-    def get_destination_label(self, purchase) -> str:
-        """Return the cell label in a month billing for a certain Purchase."""
-        row = self.CATEGORY_ROWS[purchase.good_type]
+    def get_destination_label(self, created: date, good_type: CellType) -> str:
+        """Return the cell label in a month billing for a certain Purchase or Transaction."""
+        row = self.CATEGORY_ROWS[good_type]
         _, col = a1_to_rowcol(f"{self.FIRST_DAY_COLUMN}1")
-        col += purchase.created.day - 1
+        col += created.day - 1
         return rowcol_to_a1(row, col)
 
     def clear_expenses(self):

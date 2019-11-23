@@ -243,7 +243,10 @@ class Receipt:
         """
         result = {}
         for label, (price, cell_type) in self._prices.items():
-            if cell_type in result and cell_type not in [CellType.ACTUALLY_PAID, CellType.TOTAL]:
+            if cell_type in result and cell_type not in [
+                CellType.ACTUALLY_PAID,
+                CellType.TOTAL,
+            ]:
                 result[cell_type] += price
             else:
                 result[cell_type] = price
@@ -353,8 +356,10 @@ class Receipt:
             result[purchase.good_type].append(purchase)
 
         if not result:
-            raise ValueError(f"No categorized purchases found in receipt {self.worksheet.title}. "
-                             f"Probably nothing is marked.")
+            raise ValueError(
+                f"No categorized purchases found in receipt {self.worksheet.title}. "
+                f"Probably nothing is marked."
+            )
         return result
 
     def get_category_price(self, good_type):
@@ -452,7 +457,9 @@ class Receipt:
             return True
 
         tax = self.tax or 0
-        match_total = math.isclose((self.total or self.actually_paid), (self.subtotal or calculated_sum) + tax)
+        match_total = math.isclose(
+            (self.total or self.actually_paid), (self.subtotal or calculated_sum) + tax
+        )
         if raise_exception and not match_total:
             raise ValueError(
                 f"Subtotal {self.subtotal or calculated_sum} + tax {tax} is not equal to amount "

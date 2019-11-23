@@ -29,23 +29,24 @@ def mark_transactions(source_filenames, transactions_filename, overwrite):
         click.echo(f"Processing '{source_filename}'")
         receipt_book = ReceiptBook(filename=source_filename)
 
-        for receipt in receipt_book.receipts:
-            click.echo(f"{receipt.worksheet.title} ==> ", nl=False)
-            transactions = history.find_transactions(
-                created=receipt.date,
-                price=receipt.actually_paid or receipt.total or receipt.subtotal,
-                has_receipt=None if overwrite else False,
-            )
-            if transactions:
-                click.echo(RESULT_OK + "Found.")
-                transactions[0].has_receipt = True
-            else:
-                click.echo("Not found.")
-                not_found_receipts.append(receipt)
-
-        click.echo("Updating the history spreadsheet...")
-        history.post_to_spreadsheet()
-        click.echo(RESULT_OK)
+        try:
+            for receipt in receipt_book.receipts:
+                click.echo(f"{receipt.worksheet.title} ==> ", nl=False)
+                transactions = history.find_transactions(
+                    created=receipt.date,
+                    price=receipt.actually_paid or receipt.total or receipt.subtotal,
+                    has_receipt=None if overwrite else False,
+                )
+                if transactions:
+                    click.echo(RESULT_OK + "Found.")
+                    transactions[0].has_receipt = True
+                else:
+                    click.echo("Not found.")
+                    not_found_receipts.append(receipt)
+        finally:
+            click.echo("Updating the history spreadsheet...")
+            history.post_to_spreadsheet()
+            click.echo(RESULT_OK)
 
         click.echo("Receipts not found in transactions history:")
         for receipt in not_found_receipts:

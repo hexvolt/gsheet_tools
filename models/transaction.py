@@ -2,7 +2,7 @@ import math
 from collections import defaultdict
 from datetime import date, timedelta
 from decimal import Decimal
-from typing import List, Dict
+from typing import List, Dict, Union
 
 import click
 from attr import dataclass
@@ -12,7 +12,48 @@ from gspread import Worksheet, Cell
 from gspread.utils import rowcol_to_a1, a1_to_rowcol
 
 from models.base import BaseSpreadsheet
-from utils.constants import RESULT_WARNING
+from utils.constants import RESULT_WARNING, CellType
+
+
+TYPE_WORDS_MAPPING = {
+    CellType.GROCERY: {
+        "FOODLAND",
+        "LOBLAWS",
+        "WAL-MART",
+        "NOFRILLS",
+        "-MART",
+        "RABBA",
+        "FRESH MAR",
+        "METRO",
+    },
+    CellType.TAKEOUTS: {
+        "THE GREEK",
+        "HORTONS",
+        "STARBUCKS",
+        "PANERA",
+        "RABBA",
+        "COFFEE",
+        "PURDY",
+        "JAZZ",
+        "DUKE OF",
+        "SECOND CUP",
+        "EGGSMART",
+    },
+    CellType.FURNITURE_APPLIANCES: {"THE BRICK", "FAIRSTONE", "IKEA", "BED BATH"},
+    CellType.GASOLINE: {"SHELL", "PETRO"},
+    CellType.HOUSEKEEPING: {"SHOPPERS", "DOLLARAMA", "CANADIAN TIRE", "BED BATH"},
+    CellType.GAS_ELECTRIC: {"HYD ELEC", "ENBRIDGE"},
+    CellType.CLOTHING: {"WINNERS", "MARSHALLS", "HUDSON", "SPORTING LIFE"},
+    CellType.FARES: {"PRESTO"},
+    CellType.CAR_RENT: {"ENTERPRISE"},
+    CellType.SUBSCRIPTIONS: {"NETFLIX", "DEEZER"},
+    CellType.TV_INTERNET: {"BELL", ""},
+    CellType.CHARITY: {"WAR AMPS", ""},
+    CellType.PARKING: {"PARKING"},
+    CellType.PHONES: {"MOBILE"},
+    CellType.HAIRCUTS: {"BARBIERI"},
+    CellType.ENTERTAINMENT: {"CINEMA", "CINEPLEX"},
+}
 
 
 @dataclass
@@ -50,6 +91,29 @@ class Transaction:
                     f"Transaction wasn't created."
                 )
         return cls(**kwargs)
+
+    @cached_property
+    def matching_types(self) -> List[CellType]:
+        matches = []
+        for cell_type, words in TYPE_WORDS_MAPPING.items():
+            for word in words:
+                if word in self.title.upper():
+                    matches.append(cell_type)
+        return matches
+
+    @property
+    def good_type(self) -> Union[CellType, None]:
+        """Determine the good type by transaction title."""
+        matching_types = self.matching_types
+        if len(matching_types) > 1:
+            raise ValueError(
+                f"Ambiguous type - transaction can be one of {matching_types}"
+            )
+
+        elif len(matching_types) == 1:
+            return matching_types[0]
+
+        return None
 
 
 class TransactionHistory(BaseSpreadsheet):

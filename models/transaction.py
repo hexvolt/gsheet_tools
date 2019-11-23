@@ -47,8 +47,8 @@ TYPE_WORDS_MAPPING = {
     CellType.FARES: {"PRESTO"},
     CellType.CAR_RENT: {"ENTERPRISE"},
     CellType.SUBSCRIPTIONS: {"NETFLIX", "DEEZER"},
-    CellType.TV_INTERNET: {"BELL", ""},
-    CellType.CHARITY: {"WAR AMPS", ""},
+    CellType.TV_INTERNET: {"BELL"},
+    CellType.CHARITY: {"WAR AMPS"},
     CellType.PARKING: {"PARKING"},
     CellType.PHONES: {"MOBILE"},
     CellType.HAIRCUTS: {"BARBIERI"},
@@ -56,7 +56,7 @@ TYPE_WORDS_MAPPING = {
 }
 
 
-@dataclass
+@dataclass(repr=False)
 class Transaction:
     worksheet: Worksheet
     has_receipt: bool
@@ -107,13 +107,16 @@ class Transaction:
         matching_types = self.matching_types
         if len(matching_types) > 1:
             raise ValueError(
-                f"Ambiguous type - transaction can be one of {matching_types}"
+                f"Ambiguous type - transaction can be one of {[t.name for t in matching_types]}"
             )
 
         elif len(matching_types) == 1:
             return matching_types[0]
 
         return None
+
+    def __repr__(self):
+        return f"{self.created} - {self.title} - {self.price} ({'Y' if self.has_receipt else ' '})"
 
 
 class TransactionHistory(BaseSpreadsheet):
@@ -261,7 +264,7 @@ class TransactionHistory(BaseSpreadsheet):
 
         return None
 
-    def post_to_spreadsheet(self):
+    def post_to_spreadsheet(self, character="Y"):
         """Update spreadsheet with current transaction's has_receipt values."""
         worksheet_transactions = defaultdict(list)
         for transaction in self.transactions:
@@ -271,7 +274,7 @@ class TransactionHistory(BaseSpreadsheet):
             cell_list = [
                 Cell(
                     *a1_to_rowcol(transaction.label),
-                    "Y" if transaction.has_receipt else "",
+                    character if transaction.has_receipt else "",
                 )
                 for transaction in transactions
             ]

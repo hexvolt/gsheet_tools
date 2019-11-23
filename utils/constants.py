@@ -40,6 +40,7 @@ class CellType(Enum):
     # Style and personal care
     CLOTHING = Color(red=0.8117647, green=0.8862745, blue=0.9529412)
     GYM = Color(red=0.62352943, green=0.77254903, blue=0.9098039)
+    HAIRCUTS = Color(red=7, green=7, blue=7)
 
     # Fun stuff
     ENTERTAINMENT = Color(red=0.7176471, green=0.91764706, blue=0.7019608)

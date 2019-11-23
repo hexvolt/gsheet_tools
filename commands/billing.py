@@ -53,7 +53,7 @@ def receipts_to_billing(source_filename, billing_filename, note_threshold, one_b
 
 
 @click.command()
-@click.argument("source_filename")
+@click.argument("transactions_filename")
 @click.argument("billing_filename")
 @click.argument("note_threshold", default=50)
 @click.option("--one-by-one", is_flag=True)
@@ -98,8 +98,8 @@ def transactions_to_billing(
                         f"{i} - {cell_type.name}"
                         for i, cell_type in enumerate(transaction.matching_types)
                     )
-                    msg = f"Transaction {transaction} can be one of: {choices}"
-                    selected_index = click.prompt(text=msg, show_choices=True)
+                    msg = f"Transaction {transaction} can be one of: \n{choices}\n"
+                    selected_index = int(click.prompt(text=msg, show_choices=True))
                     preferred_type = choices[selected_index]
 
                 elif len(transaction.matching_types) < 1:
@@ -110,8 +110,8 @@ def transactions_to_billing(
                         f"{i} - {cell_type.name}"
                         for i, cell_type in available_types.items()
                     )
-                    msg = f"Can't determine good type for {transaction}. Choose one of: {choices}"
-                    selected_index = click.prompt(text=msg, show_choices=True)
+                    msg = f"Can't determine good type for {transaction}. Choose one of: \n{choices}\n"
+                    selected_index = int(click.prompt(text=msg, show_choices=True))
                     preferred_type = available_types[selected_index]
 
                 else:

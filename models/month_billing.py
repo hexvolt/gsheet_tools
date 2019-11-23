@@ -26,6 +26,7 @@ class MonthBilling:
         CellType.GAS_ELECTRIC: 20,
         CellType.PHONES: 22,
         CellType.TV_INTERNET: 23,
+        CellType.RENT: 17,
         CellType.HOUSEKEEPING: 24,
         CellType.FURNITURE_APPLIANCES: 25,
         CellType.CLOTHING: 28,
@@ -92,11 +93,7 @@ class MonthBilling:
 
         is_note_needed = transaction.price > note_threshold or transaction.price < 0
         if is_note_needed:
-            note = "\n".join(
-                transaction.title
-                if transaction.price > 0
-                else f"Return/Discount: {transaction.title}"
-            )
+            note = "\n" + transaction.title if transaction.price > 0 else f"Return/Discount: {transaction.title}"
             self.worksheet.spreadsheet.client.insert_notes(
                 worksheet=self.worksheet,
                 labels_notes={destination_label: note},

@@ -57,8 +57,9 @@ def receipts_to_billing(source_filename, billing_filename, note_threshold, one_b
 @click.argument("billing_filename")
 @click.argument("note_threshold", default=50)
 @click.option("--one-by-one", is_flag=True)
+@click.option("--unambiguous-only", is_flag=True)
 def transactions_to_billing(
-    transactions_filename, billing_filename, note_threshold, one_by_one
+    transactions_filename, billing_filename, note_threshold, one_by_one, unambiguous_only
 ):
     """
     Import from the Transaction history into Billing book.
@@ -92,6 +93,9 @@ def transactions_to_billing(
                 month_billing = billing_book.get_month_billing(
                     month=transaction.created.month
                 )
+                if unambiguous_only and len(transaction.matching_types) != 1:
+                    click.echo("Ambiguous type. Skipped.")
+                    continue
 
                 if len(transaction.matching_types) > 1:
                     choices = "\n".join(
@@ -103,7 +107,7 @@ def transactions_to_billing(
                     if not selected_index.strip():
                         click.echo("Skipped.")
                         continue
-                    preferred_type = choices[int(selected_index)]
+                    preferred_type = transaction.matching_types[int(selected_index)]
 
                 elif len(transaction.matching_types) < 1:
                     available_types = {

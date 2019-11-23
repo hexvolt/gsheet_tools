@@ -31,6 +31,7 @@ class CellType(Enum):
     TAKEOUTS = Color(red=0.9764706, green=0.79607844, blue=0.6117647)
 
     # The roof over your head
+    RENT = Color(red=10, green=10, blue=10)
     HOUSEKEEPING = Color(red=0.91764706, green=0.81960785, blue=0.8627451)
     GAS_ELECTRIC = Color(red=2, green=2, blue=2)
     PHONES = Color(red=3, green=3, blue=3)
@@ -63,7 +64,7 @@ class CellType(Enum):
 
     # Other
     OTHER = Color(red=0.7176471, green=0.7176471, blue=0.7176471)
-    CHARITY = Color(red=6, green=6, blue=6)
+    CHARITY = Color(red=8, green=8, blue=8)
 
 
 SUMMARY_TYPES = (

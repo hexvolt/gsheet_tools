@@ -17,8 +17,10 @@ from utils.constants import RESULT_WARNING, CellType
 
 TYPE_WORDS_MAPPING = {
     CellType.GROCERY: {
-        "FOODLAND",
-        "LOBLAWS",
+        "FOOD",
+        "SOBEY"
+        "YUMMY",
+        "LOBLAW",
         "WAL-MART",
         "NOFRILLS",
         "-MART",
@@ -28,7 +30,7 @@ TYPE_WORDS_MAPPING = {
     },
     CellType.TAKEOUTS: {
         "THE GREEK",
-        "HORTONS",
+        "HORTON",
         "STARBUCKS",
         "PANERA",
         "RABBA",
@@ -38,21 +40,29 @@ TYPE_WORDS_MAPPING = {
         "DUKE OF",
         "SECOND CUP",
         "EGGSMART",
+        "DINNER",
+        "RESTAUR",
+        "CAFE",
+        "LCBO",
+        "LINDT",
+        "LOADED PIEROGI"
     },
     CellType.FURNITURE_APPLIANCES: {"THE BRICK", "FAIRSTONE", "IKEA", "BED BATH"},
-    CellType.GASOLINE: {"SHELL", "PETRO"},
-    CellType.HOUSEKEEPING: {"SHOPPERS", "DOLLARAMA", "CANADIAN TIRE", "BED BATH"},
+    CellType.GASOLINE: {"SHELL", "PETRO", "ESSO", "GASBAR"},
+    CellType.HOUSEKEEPING: {"SHOPPERS", "DOLLARAMA", "CANADIAN TIRE", "BED BATH", "KITCHEN STUFF"},
     CellType.GAS_ELECTRIC: {"HYD ELEC", "ENBRIDGE"},
     CellType.CLOTHING: {"WINNERS", "MARSHALLS", "HUDSON", "SPORTING LIFE"},
-    CellType.FARES: {"PRESTO"},
-    CellType.CAR_RENT: {"ENTERPRISE"},
-    CellType.SUBSCRIPTIONS: {"NETFLIX", "DEEZER"},
+    CellType.FARES: {"PRESTO", "GOPARK"},
+    CellType.CAR_RENT: {"ENTERPRISE", "UBER", "LYFT"},
+    CellType.SUBSCRIPTIONS: {"NETFLIX", "DEEZER", "OKCUPID", "PRIME MEMBER"},
     CellType.TV_INTERNET: {"BELL"},
+    CellType.BOOKS: {"INDIGO C", "CHAPTER"},
+    CellType.TRAVEL: {"AIRBNB", "ARROWHEAD", "CONSERVATION", "MUSKOKA", "AIR CAN"},
     CellType.CHARITY: {"WAR AMPS"},
-    CellType.PARKING: {"PARKING"},
+    CellType.PARKING: {"PARKING", "INDIGO PARC", "IMPARK"},
     CellType.PHONES: {"MOBILE"},
     CellType.HAIRCUTS: {"BARBIERI"},
-    CellType.ENTERTAINMENT: {"CINEMA", "CINEPLEX"},
+    CellType.ENTERTAINMENT: {"CINEMA", "CINEPLEX", "THEATRE", "SHOOTING ACADEMY"},
 }
 
 

@@ -62,6 +62,9 @@ class CellType(Enum):
     DRUGS = Color(red=0.6431373, green=0.7607843, blue=0.95686275)
     DENTAL_VISION = Color(red=0.42745098, green=0.61960787, blue=0.92156863)
 
+    # Insurance
+    HOME_INSURANCE = Color(red=11, green=11, blue=11)
+
     # Other
     OTHER = Color(red=0.7176471, green=0.7176471, blue=0.7176471)
     CHARITY = Color(red=8, green=8, blue=8)

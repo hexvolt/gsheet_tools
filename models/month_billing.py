@@ -45,6 +45,7 @@ class MonthBilling:
         CellType.FARES: 49,
         CellType.DRUGS: 52,
         CellType.DENTAL_VISION: 53,
+        CellType.HOME_INSURANCE: 56,
         CellType.CHARITY: 87,
         CellType.OTHER: 88,
     }

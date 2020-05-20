@@ -6,7 +6,7 @@ certifi==2019.9.11
 chardet==3.0.4
 Click==7.0
 git+https://github.com/hexvolt/gspread.git@3.1.1#egg=gspread
-httplib2==0.14.0
+httplib2==0.18.0
 idna==2.8
 natsort==6.0.0
 oauth2client==4.1.3
